@@ -134,6 +134,56 @@
     margin: 1.5rem auto;
     opacity: 0.6;
   }
+
+  .photo-hint {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(212, 175, 106, 0.75);
+    margin-bottom: 0.6rem;
+  }
+
+  .photo-strip {
+    display: flex;
+    gap: 0.9rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem 0.25rem 1rem;
+    margin: 0 -0.25rem 1.5rem;
+    scrollbar-width: none;
+  }
+
+  .photo-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .photo-card {
+    scroll-snap-align: center;
+    flex: 0 0 auto;
+    width: 145px;
+    height: 185px;
+    border-radius: 10px;
+    background: linear-gradient(160deg, rgba(212, 175, 106, 0.22), rgba(253, 246, 236, 0.06));
+    border: 1px solid rgba(212, 175, 106, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: rgba(253, 246, 236, 0.55);
+  }
+
+  .photo-card .icon {
+    font-size: 1.8rem;
+    opacity: 0.7;
+  }
+
+  .photo-card .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 </style>
 </head>
 <body>
@@ -150,6 +200,16 @@
     Congratulations on finding each other. Here's to a lifetime of
     good wine, better laughs, and the best kind of trouble.
   </p>
+
+  <div class="photo-hint">Swipe for photos →</div>
+  <div class="photo-strip">
+    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 1</span></div>
+    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 2</span></div>
+    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 3</span></div>
+    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 4</span></div>
+    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 5</span></div>
+  </div>
+
   <button class="toast-btn" id="toast-btn">Raise a Glass 🥂</button>
   <div class="cheers" id="cheers">Cheers to Angelika & Stanislaw! 🍷</div>
 </div>
@@ -218,6 +278,10 @@
       spawnConfetti(90);
       const cheers = document.getElementById('cheers');
       cheers.classList.add('show');
+
+      if (navigator.vibrate) {
+        navigator.vibrate([25, 40, 25, 40, 90]); // little clink-clink, then a cheers buzz
+      }
     });
   })();
 </script>
