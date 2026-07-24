@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="color-scheme" content="light" />
+<meta name="color-scheme" content="only light" />
 <title>Angelika & Stanislaw</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    color-scheme: light;
+    color-scheme: only light;
     --forest: #34432b;
     --sage: #7e9470;
     --sage-light: #b7c7a8;
@@ -25,6 +25,7 @@
     padding: 0;
     height: 100%;
     overflow-x: hidden;
+    background-color: var(--forest);
   }
 
   body {
@@ -33,7 +34,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'Georgia', 'Iowan Old Style', serif;
-    background: radial-gradient(ellipse at top, var(--sage) 0%, var(--forest) 70%);
+    background-image: radial-gradient(ellipse at top, var(--sage) 0%, var(--forest) 70%);
     color: var(--cream);
     text-align: center;
     padding: 2rem 1.25rem;
