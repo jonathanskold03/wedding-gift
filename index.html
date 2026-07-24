@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="color-scheme" content="only light" />
 <title>Angelika & Stanislaw</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,20 +24,17 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow-x: hidden;
+    overflow: hidden;
     background-color: var(--forest);
   }
 
   body {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 100vh;
+    height: 100dvh;
     font-family: 'Georgia', 'Iowan Old Style', serif;
     background-image: radial-gradient(ellipse at top, var(--sage) 0%, var(--forest) 70%);
     color: var(--cream);
     text-align: center;
-    padding: 2rem 1.25rem;
     position: relative;
   }
 
@@ -50,64 +47,137 @@
     z-index: 5;
   }
 
-  .card {
+  .app {
     position: relative;
     z-index: 2;
-    width: 100%;
+    height: 100%;
     max-width: 30rem;
-    min-width: 0;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: max(0.9rem, env(safe-area-inset-top)) 1.1rem max(0.6rem, env(safe-area-inset-bottom));
     opacity: 0;
-    transform: translateY(18px);
-    animation: reveal 1.1s ease-out 0.4s forwards;
+    animation: reveal 0.9s ease-out 0.3s forwards;
   }
 
   @keyframes reveal {
-    to { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; }
+  }
+
+  .app-header {
+    flex-shrink: 0;
   }
 
   .eyebrow {
-    letter-spacing: 0.35em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--sage-light);
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.3rem;
+    padding: 0 3rem;
   }
 
   h1 {
     font-family: 'Dancing Script', cursive;
-    font-size: clamp(2.8rem, 11vw, 4.4rem);
-    margin: 0 0 0.2rem;
+    font-size: clamp(1.9rem, 8.5vw, 2.6rem);
+    margin: 0;
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1.1;
     color: var(--blush);
   }
 
   .amp {
     color: var(--blush);
-    padding: 0 0.15em;
+    padding: 0 0.1em;
   }
 
   .date {
     font-family: 'Dancing Script', cursive;
     font-weight: 700;
-    font-size: 1.6rem;
+    font-size: 1.15rem;
     color: var(--blush);
-    margin-bottom: 1.25rem;
+    margin-top: 0.1rem;
+  }
+
+  .counter {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: rgba(253, 246, 236, 0.85);
+    margin-top: 0.25rem;
+  }
+
+  .divider {
+    width: 46px;
+    height: 1px;
+    background: var(--sage-light);
+    margin: 0.45rem auto;
+    opacity: 0.7;
+  }
+
+  .music-btn {
+    position: fixed;
+    top: max(0.9rem, env(safe-area-inset-top));
+    right: 1rem;
+    z-index: 7;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--blush);
+    background: rgba(253, 246, 236, 0.95);
+    color: var(--blush);
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+
+  .music-btn.playing {
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Tab content area */
+  .app-content {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    margin-top: 0.4rem;
+  }
+
+  .tab-panel {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.25rem 0.1rem;
+  }
+
+  .tab-panel.active {
+    display: flex;
   }
 
   .message {
-    font-size: 1.1rem;
-    line-height: 1.7;
-    margin-bottom: 2.25rem;
+    font-size: 1rem;
+    line-height: 1.55;
     color: rgba(253, 246, 236, 0.92);
+    margin: 0 0 1.5rem;
   }
 
   .toast-btn {
     background: var(--blush);
     color: var(--cream);
     border: none;
-    padding: 0.85rem 2rem;
-    font-size: 1rem;
+    padding: 0.8rem 1.9rem;
+    font-size: 0.95rem;
     font-family: inherit;
     letter-spacing: 0.05em;
     border-radius: 999px;
@@ -126,8 +196,8 @@
   }
 
   .cheers {
-    margin-top: 1.5rem;
-    font-size: 1rem;
+    margin-top: 1.1rem;
+    font-size: 0.95rem;
     color: var(--blush);
     min-height: 1.4em;
     opacity: 0;
@@ -138,31 +208,26 @@
     opacity: 1;
   }
 
-  .divider {
-    width: 60px;
-    height: 1px;
-    background: var(--sage-light);
-    margin: 1.5rem auto;
-    opacity: 0.7;
-  }
-
   .photo-hint {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: rgba(183, 199, 168, 0.85);
     margin-bottom: 0.6rem;
+    flex-shrink: 0;
   }
 
   .photo-strip {
     display: flex;
-    gap: 0.9rem;
+    gap: 0.8rem;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    padding: 0.25rem 0.25rem 1rem;
-    margin: 0 -0.25rem 1.5rem;
+    padding: 0.25rem 0.6rem 0.6rem;
+    width: 100%;
     scrollbar-width: none;
+    flex-shrink: 0;
   }
 
   .photo-strip::-webkit-scrollbar {
@@ -172,8 +237,9 @@
   .photo-card {
     scroll-snap-align: center;
     flex: 0 0 auto;
-    width: 145px;
-    height: 185px;
+    width: 42vw;
+    max-width: 150px;
+    aspect-ratio: 3 / 4;
     border-radius: 10px;
     background: rgba(253, 246, 236, 0.14);
     border: 1px solid rgba(253, 246, 236, 0.45);
@@ -181,95 +247,38 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     color: rgba(253, 246, 236, 0.7);
   }
 
   .photo-card .icon {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     opacity: 0.75;
   }
 
   .photo-card .label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
-  .counter {
-    font-size: 0.85rem;
-    letter-spacing: 0.04em;
-    color: rgba(253, 246, 236, 0.85);
-    margin-bottom: 1.75rem;
-  }
-
-  .music-btn {
-    position: fixed;
-    bottom: 1.25rem;
-    right: 1.25rem;
-    z-index: 7;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 1px solid var(--blush);
-    background: rgba(253, 246, 236, 0.95);
-    color: var(--blush);
-    font-size: 1.3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  }
-
-  .music-btn.playing {
-    animation: spin 3s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .game-toggle-btn {
-    margin-top: 1.75rem;
-    background: transparent;
-    border: 1px solid var(--blush);
-    color: var(--blush);
-    padding: 0.7rem 1.6rem;
-    font-family: inherit;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-
-  .game-toggle-btn:hover {
-    background: rgba(196, 139, 152, 0.15);
-  }
-
-  .game-section {
-    margin-top: 1.5rem;
-    display: none;
-  }
-
-  .game-section.show {
-    display: block;
-  }
-
   .game-title {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--blush);
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
   }
 
   .memory-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem;
-    max-width: 280px;
+    gap: 0.4rem;
+    width: 100%;
+    max-width: min(225px, 46vh);
     margin: 0 auto;
+    flex-shrink: 0;
   }
 
   .memory-card {
@@ -299,7 +308,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.6rem;
+    font-size: 1.2rem;
   }
 
   .memory-card-back {
@@ -319,9 +328,10 @@
   }
 
   .game-status {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: rgba(253, 246, 236, 0.85);
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    flex-shrink: 0;
   }
 
   .game-status.game-win {
@@ -330,15 +340,52 @@
   }
 
   .restart-btn {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     background: transparent;
     border: 1px solid rgba(253, 246, 236, 0.5);
     color: rgba(253, 246, 236, 0.85);
-    padding: 0.5rem 1.2rem;
+    padding: 0.45rem 1.1rem;
     border-radius: 999px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Bottom tab nav */
+  .app-nav {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    margin-top: 0.4rem;
+    border-top: 1px solid rgba(253, 246, 236, 0.18);
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: none;
+    color: rgba(253, 246, 236, 0.6);
+    font-family: inherit;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.35rem 1.1rem;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  .nav-btn .nav-icon {
+    font-size: 1.15rem;
+  }
+
+  .nav-btn.active {
+    color: var(--blush);
+    background: rgba(196, 139, 152, 0.14);
   }
 </style>
 </head>
@@ -349,40 +396,82 @@
 <audio id="bg-audio" src="assets/song.mp3" loop preload="none"></audio>
 <button class="music-btn" id="music-toggle" aria-label="Toggle background music" title="Add your song at assets/song.mp3">🎵</button>
 
-<div class="card">
-  <div class="eyebrow">A little something for the newlyweds</div>
-  <h1>Angelika <span class="amp">&amp;</span> Stanislaw</h1>
-  <div class="date">01 August 2026</div>
-  <div class="counter" id="married-counter"></div>
-  <div class="divider"></div>
-  <p class="message">
-    Placeholder message — swap this out for your real toast!
-    Congratulations on finding each other. Here's to a lifetime of
-    good wine, better laughs, and the best kind of trouble.
-  </p>
-
-  <div class="photo-hint">Swipe for photos →</div>
-  <div class="photo-strip">
-    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 1</span></div>
-    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 2</span></div>
-    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 3</span></div>
-    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 4</span></div>
-    <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 5</span></div>
+<div class="app">
+  <div class="app-header">
+    <div class="eyebrow">A little something for the newlyweds</div>
+    <h1>Angelika <span class="amp">&amp;</span> Stanislaw</h1>
+    <div class="date">01 August 2026</div>
+    <div class="counter" id="married-counter"></div>
+    <div class="divider"></div>
   </div>
 
-  <button class="toast-btn" id="toast-btn">Raise a Glass 🥂</button>
-  <div class="cheers" id="cheers">Cheers to Angelika & Stanislaw! 🍷</div>
+  <div class="app-content">
+    <div class="tab-panel active" id="tab-home">
+      <p class="message">
+        Placeholder message — swap this out for your real toast!
+        Congratulations on finding each other. Here's to a lifetime of
+        good wine, better laughs, and the best kind of trouble.
+      </p>
+      <button class="toast-btn" id="toast-btn">Raise a Glass 🥂</button>
+      <div class="cheers" id="cheers">Cheers to Angelika & Stanislaw! 🍷</div>
+    </div>
 
-  <button class="game-toggle-btn" id="game-toggle">🎮 Play a Quick Game</button>
-  <div class="game-section" id="game-section">
-    <div class="game-title">Match the Wedding Pairs</div>
-    <div class="memory-grid" id="memory-grid"></div>
-    <div class="game-status" id="game-status">Find all 6 pairs!</div>
-    <button class="restart-btn" id="restart-btn">Restart</button>
+    <div class="tab-panel" id="tab-photos">
+      <div class="photo-hint">Swipe for photos →</div>
+      <div class="photo-strip">
+        <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 1</span></div>
+        <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 2</span></div>
+        <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 3</span></div>
+        <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 4</span></div>
+        <div class="photo-card"><span class="icon">📷</span><span class="label">Photo 5</span></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-game">
+      <div class="game-title">Match the Wedding Pairs</div>
+      <div class="memory-grid" id="memory-grid"></div>
+      <div class="game-status" id="game-status">Find all 6 pairs!</div>
+      <button class="restart-btn" id="restart-btn">Restart</button>
+    </div>
+  </div>
+
+  <div class="app-nav">
+    <button class="nav-btn active" data-tab="tab-home">
+      <span class="nav-icon">🏠</span>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-photos">
+      <span class="nav-icon">📷</span>
+      <span>Photos</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-game">
+      <span class="nav-icon">🎮</span>
+      <span>Game</span>
+    </button>
   </div>
 </div>
 
 <script>
+  // Tab navigation
+  (function () {
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navBtns.forEach(b => b.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+
+        if (btn.dataset.tab === 'tab-game' && typeof window.initGameOnce === 'function') {
+          window.initGameOnce();
+        }
+      });
+    });
+  })();
+
   // Confetti burst on load
   (function () {
     const canvas = document.getElementById('confetti-canvas');
@@ -512,8 +601,6 @@
     const SYMBOLS = ['💍', '❤️', '🥂', '🎉', '💐', '🎂'];
     const grid = document.getElementById('memory-grid');
     const status = document.getElementById('game-status');
-    const toggleBtn = document.getElementById('game-toggle');
-    const section = document.getElementById('game-section');
     const restartBtn = document.getElementById('restart-btn');
 
     let firstCard = null;
@@ -589,14 +676,12 @@
       }
     }
 
-    toggleBtn.addEventListener('click', () => {
-      const isShowing = section.classList.toggle('show');
-      toggleBtn.textContent = isShowing ? 'Hide Game' : '🎮 Play a Quick Game';
-      if (isShowing && !started) {
+    window.initGameOnce = function () {
+      if (!started) {
         started = true;
         buildGame();
       }
-    });
+    };
 
     restartBtn.addEventListener('click', buildGame);
   })();
