@@ -4,11 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Angelika & Stanislaw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --wine: #6d0f2b;
-    --wine-dark: #430a1a;
-    --gold: #d4af6a;
+    --forest: #34432b;
+    --sage: #7e9470;
+    --sage-light: #b7c7a8;
+    --blush: #e28aa5;
     --cream: #fdf6ec;
   }
 
@@ -27,7 +31,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'Georgia', 'Iowan Old Style', serif;
-    background: radial-gradient(circle at top, var(--wine) 0%, var(--wine-dark) 70%);
+    background: radial-gradient(circle at top, var(--sage) 0%, var(--forest) 70%);
     color: var(--cream);
     text-align: center;
     padding: 2rem 1.25rem;
@@ -62,28 +66,30 @@
     letter-spacing: 0.35em;
     text-transform: uppercase;
     font-size: 0.7rem;
-    color: var(--gold);
+    color: var(--sage-light);
     margin-bottom: 1.25rem;
   }
 
   h1 {
-    font-size: clamp(2.2rem, 7vw, 3.4rem);
-    margin: 0 0 0.4rem;
-    font-weight: normal;
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(2.8rem, 11vw, 4.4rem);
+    margin: 0 0 0.2rem;
+    font-weight: 700;
     line-height: 1.15;
+    color: var(--blush);
   }
 
   .amp {
-    color: var(--gold);
-    font-style: italic;
+    color: var(--blush);
     padding: 0 0.15em;
   }
 
   .date {
-    font-size: 1rem;
-    color: var(--gold);
-    margin-bottom: 2rem;
-    letter-spacing: 0.08em;
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--blush);
+    margin-bottom: 1.25rem;
   }
 
   .message {
@@ -94,8 +100,8 @@
   }
 
   .toast-btn {
-    background: var(--gold);
-    color: var(--wine-dark);
+    background: var(--blush);
+    color: var(--cream);
     border: none;
     padding: 0.85rem 2rem;
     font-size: 1rem;
@@ -119,7 +125,7 @@
   .cheers {
     margin-top: 1.5rem;
     font-size: 1rem;
-    color: var(--gold);
+    color: var(--blush);
     min-height: 1.4em;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -132,16 +138,16 @@
   .divider {
     width: 60px;
     height: 1px;
-    background: var(--gold);
+    background: var(--sage-light);
     margin: 1.5rem auto;
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
   .photo-hint {
     font-size: 0.7rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(212, 175, 106, 0.75);
+    color: rgba(183, 199, 168, 0.85);
     margin-bottom: 0.6rem;
   }
 
@@ -166,19 +172,19 @@
     width: 145px;
     height: 185px;
     border-radius: 10px;
-    background: linear-gradient(160deg, rgba(212, 175, 106, 0.22), rgba(253, 246, 236, 0.06));
-    border: 1px solid rgba(212, 175, 106, 0.4);
+    background: rgba(253, 246, 236, 0.14);
+    border: 1px solid rgba(253, 246, 236, 0.45);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: rgba(253, 246, 236, 0.55);
+    color: rgba(253, 246, 236, 0.7);
   }
 
   .photo-card .icon {
     font-size: 1.8rem;
-    opacity: 0.7;
+    opacity: 0.75;
   }
 
   .photo-card .label {
@@ -190,7 +196,7 @@
   .counter {
     font-size: 0.85rem;
     letter-spacing: 0.04em;
-    color: rgba(253, 246, 236, 0.8);
+    color: rgba(253, 246, 236, 0.85);
     margin-bottom: 1.75rem;
   }
 
@@ -202,15 +208,15 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 1px solid rgba(212, 175, 106, 0.6);
-    background: rgba(67, 10, 26, 0.85);
-    color: var(--gold);
+    border: 1px solid var(--blush);
+    background: rgba(253, 246, 236, 0.95);
+    color: var(--blush);
     font-size: 1.3rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   }
 
   .music-btn.playing {
@@ -224,8 +230,8 @@
   .game-toggle-btn {
     margin-top: 1.75rem;
     background: transparent;
-    border: 1px solid rgba(212, 175, 106, 0.6);
-    color: var(--gold);
+    border: 1px solid var(--blush);
+    color: var(--blush);
     padding: 0.7rem 1.6rem;
     font-family: inherit;
     font-size: 0.9rem;
@@ -235,7 +241,7 @@
   }
 
   .game-toggle-btn:hover {
-    background: rgba(212, 175, 106, 0.12);
+    background: rgba(226, 138, 165, 0.15);
   }
 
   .game-section {
@@ -251,7 +257,7 @@
     font-size: 0.8rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--blush);
     margin-bottom: 0.9rem;
   }
 
@@ -294,36 +300,37 @@
   }
 
   .memory-card-back {
-    background: linear-gradient(160deg, rgba(212, 175, 106, 0.3), rgba(253, 246, 236, 0.08));
-    border: 1px solid rgba(212, 175, 106, 0.5);
+    background: rgba(253, 246, 236, 0.16);
+    border: 1px solid var(--blush);
   }
 
   .memory-card-front {
-    background: rgba(253, 246, 236, 0.92);
-    color: var(--wine-dark);
+    background: rgba(253, 246, 236, 0.95);
+    color: var(--forest);
     transform: rotateY(180deg);
   }
 
   .memory-card.matched .memory-card-front {
-    background: rgba(212, 175, 106, 0.92);
+    background: var(--blush);
+    color: var(--cream);
   }
 
   .game-status {
     font-size: 0.85rem;
-    color: rgba(253, 246, 236, 0.8);
+    color: rgba(253, 246, 236, 0.85);
     margin-top: 1rem;
   }
 
   .game-status.game-win {
-    color: var(--gold);
+    color: var(--blush);
     font-weight: bold;
   }
 
   .restart-btn {
     margin-top: 1rem;
     background: transparent;
-    border: 1px solid rgba(212, 175, 106, 0.4);
-    color: rgba(253, 246, 236, 0.8);
+    border: 1px solid rgba(253, 246, 236, 0.5);
+    color: rgba(253, 246, 236, 0.85);
     padding: 0.5rem 1.2rem;
     border-radius: 999px;
     font-family: inherit;
@@ -386,7 +393,7 @@
     window.addEventListener('resize', resize);
     resize();
 
-    const colors = ['#d4af6a', '#fdf6ec', '#6d0f2b', '#f2d9a6', '#ffffff'];
+    const colors = ['#e28aa5', '#fdf6ec', '#7e9470', '#34432b', '#ffffff'];
 
     function spawnConfetti(count) {
       for (let i = 0; i < count; i++) {
