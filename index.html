@@ -401,45 +401,70 @@
     flex-shrink: 0;
   }
 
+  /* Intro: she sits at the bottom centre holding the bouquet, throws it up, then
+     drops out of frame so the player's hands can pop up in her place. */
   .catch-bride {
     position: absolute;
-    top: 10px;
+    bottom: 38px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2.6rem;
-    opacity: 1;
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    width: 74px;
+    height: auto;
+    display: block;
+    pointer-events: none;
     z-index: 3;
   }
 
   .catch-bride.windup {
-    animation: brideWindup 0.5s ease;
+    animation: brideWindup 0.45s ease;
   }
 
   @keyframes brideWindup {
-    0% { transform: translateX(-50%) rotate(0deg); }
-    40% { transform: translateX(-50%) rotate(-10deg); }
-    100% { transform: translateX(-50%) rotate(0deg); }
+    0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+    45% { transform: translateX(-50%) translateY(6px) rotate(-7deg); }
+    100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
   }
 
+  .catch-bride.leaving {
+    animation: brideExit 0.45s ease-in forwards;
+  }
+
+  /* Must clear her bottom offset plus her own height to leave frame entirely. */
+  @keyframes brideExit {
+    0% { transform: translateX(-50%) translateY(0); }
+    100% { transform: translateX(-50%) translateY(175%); }
+  }
+
+  /* Held in front of her at the bottom centre, then thrown straight up. */
   .catch-toss {
     position: absolute;
-    top: 34px;
+    bottom: 10px;
     left: 50%;
     font-size: 3rem;
     opacity: 0;
     pointer-events: none;
+    transform: translate(-50%, 0);
     z-index: 4;
   }
 
+  .catch-toss.held {
+    opacity: 1;
+    animation: bouquetHold 1s ease-in-out infinite;
+  }
+
+  @keyframes bouquetHold {
+    0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
+    50% { transform: translate(-50%, -3px) rotate(3deg); }
+  }
+
   .catch-toss.tossing {
-    animation: bouquetToss 0.7s ease forwards;
+    animation: bouquetToss 0.95s ease-out forwards;
   }
 
   @keyframes bouquetToss {
-    0% { opacity: 0; transform: translate(-50%, 0) scale(0.7) rotate(0deg); }
-    15% { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -210px) scale(1) rotate(300deg); }
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0deg); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -400px) scale(1.05) rotate(340deg); }
   }
 
   .catch-hands {
@@ -450,6 +475,21 @@
     font-size: 2.3rem;
     line-height: 1;
     z-index: 3;
+  }
+
+  /* Hidden below the stage during the bride's intro, then popped up. */
+  .catch-hands.pre-game {
+    opacity: 0;
+    transform: translateX(-50%) translateY(160%);
+  }
+
+  .catch-hands.popping {
+    animation: handsPop 0.4s cubic-bezier(0.2, 1.35, 0.4, 1) forwards;
+  }
+
+  @keyframes handsPop {
+    0% { opacity: 0; transform: translateX(-50%) translateY(160%); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
   .catch-bouquet-display {
@@ -509,6 +549,12 @@
 
   .catch-flower.is-cake {
     font-size: 1.75rem;
+  }
+
+  /* A cake you successfully dodged fades away below the hands. */
+  .catch-flower.dodged {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
   }
 
   .catch-flower {
@@ -617,9 +663,9 @@
     <div class="tab-panel" id="tab-catch">
       <div class="game-title">Catch the Bouquet</div>
       <div class="catch-stage" id="catch-stage">
-        <div class="catch-bride" id="catch-bride">👰</div>
-        <div class="catch-toss" id="catch-toss">💐</div>
-        <div class="catch-hands" id="catch-hands">
+        <img class="catch-bride" id="catch-bride" src="assets/game/bride-head.png" alt="" />
+        <div class="catch-toss held" id="catch-toss">💐</div>
+        <div class="catch-hands pre-game" id="catch-hands">
           🤲
           <div class="catch-bouquet-display" id="catch-bouquet-display"></div>
         </div>
@@ -922,6 +968,18 @@
     // if it drops squarely into the hands, so it stays dodgeable.
     const CAKE_HALF_WIDTH = 38;
     const FLOWER_SIZE = 26;
+    const FRAME_MS = 1000 / 60;
+
+    // Difficulty ramps on elapsed play time, then plateaus.
+    const RAMP_MS = 100000;
+    const SPEED_START = 1.5, SPEED_MAX = 4.4;
+    const INTERVAL_START = 1150, INTERVAL_MIN = 560;
+    // Guaranteed reaction window between two things reaching the hands.
+    const ARRIVAL_GAP_START = 700, ARRIVAL_GAP_MIN = 430;
+    // Vertical spacing floor: comfortably more than a sprite, so nothing overlaps.
+    const MIN_SEPARATION_PX = 64;
+    const CAKE_GRACE_MS = 12000;
+    const CAKE_CHANCE_START = 0.10, CAKE_CHANCE_MAX = 0.30;
 
     let flowers = [];
     let handsX = 0;
@@ -930,9 +988,38 @@
     let paused = false;
     let rafId = null;
     let spawnTimer = null;
-    let spawnInterval = 1050;
-    let fallSpeed = 1.6;
     let initialized = false;
+    let introTimers = [];
+    let elapsedMs = 0;
+    let lastFrameAt = 0;
+
+    // Every item shares one fall speed. Per-item random speeds let a later fast
+    // item overtake an earlier slow one, so two things could reach the hands at
+    // once in different places — an unavoidable loss. A shared speed preserves
+    // spawn spacing exactly, so arrivals stay in order and separated.
+    function ramp() {
+      return Math.min(1, elapsedMs / RAMP_MS);
+    }
+
+    function currentSpeed() {
+      return SPEED_START + ramp() * (SPEED_MAX - SPEED_START);
+    }
+
+    function currentInterval() {
+      return INTERVAL_START - ramp() * (INTERVAL_START - INTERVAL_MIN);
+    }
+
+    function currentCakeChance() {
+      if (elapsedMs < CAKE_GRACE_MS) return 0;
+      const d = Math.min(1, (elapsedMs - CAKE_GRACE_MS) / Math.max(1, RAMP_MS - CAKE_GRACE_MS));
+      return CAKE_CHANCE_START + d * (CAKE_CHANCE_MAX - CAKE_CHANCE_START);
+    }
+
+    // Minimum vertical spacing a new item needs behind the last one.
+    function minSeparationPx() {
+      const gapMs = ARRIVAL_GAP_START - ramp() * (ARRIVAL_GAP_START - ARRIVAL_GAP_MIN);
+      return Math.max(MIN_SEPARATION_PX, currentSpeed() * (gapMs / FRAME_MS));
+    }
 
     function stageRect() {
       return stage.getBoundingClientRect();
@@ -960,10 +1047,9 @@
       const rect = stageRect();
       const el = document.createElement('div');
 
-      // After a few catches, cake starts showing up. Catching it ends the run,
-      // so it has to be dodged — let it fall past the hands.
-      const cakeChance = score < 3 ? 0 : Math.min(0.22, 0.10 + score * 0.01);
-      const isCake = Math.random() < cakeChance;
+      // Cake shows up after a grace period, then gets steadily more common.
+      // Catching it ends the run, so it has to be dodged.
+      const isCake = Math.random() < currentCakeChance();
 
       el.className = isCake ? 'catch-flower is-cake' : 'catch-flower';
       const emoji = isCake
@@ -971,9 +1057,22 @@
         : FLOWER_EMOJIS[Math.floor(Math.random() * FLOWER_EMOJIS.length)];
       el.textContent = emoji;
 
-      const x = FLOWER_SIZE / 2 + Math.random() * Math.max(1, rect.width - FLOWER_SIZE);
+      // Keep spawns inside the hands' reachable span so nothing is uncatchable,
+      // and don't drop a cake right on top of where the last flower is heading.
+      const minX = FLOWER_SIZE / 2;
+      const maxX = Math.max(minX + 1, rect.width - FLOWER_SIZE / 2);
+      let x = minX + Math.random() * (maxX - minX);
+
+      const prev = flowers.length ? flowers[flowers.length - 1] : null;
+      if (prev && prev.isCake !== isCake && Math.abs(x - prev.x) < 42) {
+        // Nudge to the roomier side so a catch and a dodge aren't stacked in one column.
+        x = (prev.x - minX) > (maxX - prev.x)
+          ? Math.max(minX, prev.x - 52)
+          : Math.min(maxX, prev.x + 52);
+      }
+
       stage.appendChild(el);
-      flowers.push({ el, x, y: -FLOWER_SIZE, speed: fallSpeed + Math.random() * 0.6, emoji, isCake });
+      flowers.push({ el, x, y: -FLOWER_SIZE, emoji, isCake });
     }
 
     // Frosting splatter across the bouquet and out over the stage.
@@ -1083,15 +1182,21 @@
       if (navigator.vibrate) navigator.vibrate(reason === 'cake' ? [70, 50, 70, 50, 140] : [40, 60, 40]);
     }
 
-    function gameLoop() {
+    function gameLoop(ts) {
       if (!playing) return;
+
+      // Accumulate play time for the difficulty ramp. Clamped so a stall or a
+      // backgrounded tab can't jump the difficulty forward.
+      if (lastFrameAt) elapsedMs += Math.min(ts - lastFrameAt, 50);
+      lastFrameAt = ts;
 
       const rect = stageRect();
       const catchLineY = rect.height - 26;
+      const speed = currentSpeed();
 
       for (let i = flowers.length - 1; i >= 0; i--) {
         const f = flowers[i];
-        f.y += f.speed;
+        f.y += speed;
         f.el.style.left = (f.x - FLOWER_SIZE / 2) + 'px';
         f.el.style.top = f.y + 'px';
 
@@ -1113,8 +1218,10 @@
                 return;
               }
             }
-            // Dodged — let it drop past the hands and clean it up off-screen.
-            if (f.y > rect.height + 30) {
+            // Dodged — fade it out promptly so it can't visually collide with
+            // the next flower arriving in the same column.
+            if (!f.el.classList.contains('dodged')) f.el.classList.add('dodged');
+            if (f.y > catchLineY + 40) {
               f.el.remove();
               flowers.splice(i, 1);
             }
@@ -1128,8 +1235,6 @@
             score++;
             addToBouquet(score - 1, caughtEmoji);
             updateScore();
-            fallSpeed = Math.min(fallSpeed + 0.04, 5);
-            if (spawnInterval > 480) spawnInterval -= 6;
           } else {
             endGame('miss');
             return;
@@ -1142,8 +1247,22 @@
 
     function scheduleSpawn() {
       if (!playing) return;
+
+      // Don't release a new item until the highest one in play is far enough
+      // ahead. Because everything falls at the same speed, this spacing is
+      // preserved all the way down, so two things can never reach the hands
+      // together and sprites never overlap.
+      let topY = Infinity;
+      for (const f of flowers) if (f.y < topY) topY = f.y;
+      const gapBehind = topY === Infinity ? Infinity : topY + FLOWER_SIZE;
+
+      if (gapBehind < minSeparationPx()) {
+        spawnTimer = setTimeout(scheduleSpawn, 70);
+        return;
+      }
+
       spawnFlower();
-      spawnTimer = setTimeout(scheduleSpawn, spawnInterval);
+      spawnTimer = setTimeout(scheduleSpawn, currentInterval());
     }
 
     function startFalling() {
@@ -1157,27 +1276,55 @@
       stage.querySelectorAll('.catch-splat, .catch-flash, .catch-smoosh').forEach(el => el.remove());
       bouquetDisplay.innerHTML = '';
       score = 0;
-      fallSpeed = 1.6;
-      spawnInterval = 1050;
+      elapsedMs = 0;
+      lastFrameAt = 0;
       updateScore();
       const rect = stageRect();
       handsX = rect.width / 2;
       renderHands();
     }
 
+    // Intro choreography: hold the bouquet -> throw it up -> she drops out of
+    // frame -> the player's hands pop up in her place -> play begins.
+    function clearIntro() {
+      introTimers.forEach(clearTimeout);
+      introTimers = [];
+    }
+
     function playThrowAnimation(cb) {
-      bride.classList.add('windup');
+      clearIntro();
+
+      bride.classList.remove('leaving', 'windup');
+      hands.classList.remove('popping');
+      hands.classList.add('pre-game');
       toss.classList.remove('tossing');
       void toss.offsetWidth;
+      toss.classList.add('held');
 
-      setTimeout(() => {
-        toss.classList.add('tossing');
-      }, 250);
+      const T_WINDUP = 900;   // she holds the bouquet for a beat first
+      const T_TOSS   = 1060;
+      const T_EXIT   = 1300;  // face drops out of frame
+      const T_HANDS  = 1620;  // hands pop up from the bottom
+      const T_PLAY   = 1980;  // flowers start falling
 
-      setTimeout(() => {
+      const at = (ms, fn) => introTimers.push(setTimeout(fn, ms));
+
+      at(T_WINDUP, () => bride.classList.add('windup'));
+      at(T_TOSS, () => {
         bride.classList.remove('windup');
+        toss.classList.remove('held');
+        void toss.offsetWidth;
+        toss.classList.add('tossing');
+      });
+      at(T_EXIT, () => bride.classList.add('leaving'));
+      at(T_HANDS, () => {
+        hands.classList.remove('pre-game');
+        hands.classList.add('popping');
+      });
+      at(T_PLAY, () => {
+        hands.classList.remove('popping');
         cb();
-      }, 950);
+      });
     }
 
     function startGame() {
@@ -1231,6 +1378,7 @@
     window.catchGameResume = function () {
       if (!playing || !paused) return;
       paused = false;
+      lastFrameAt = 0; // don't count time spent on another tab
       scheduleSpawn();
       rafId = requestAnimationFrame(gameLoop);
     };
