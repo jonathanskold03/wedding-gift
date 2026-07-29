@@ -387,6 +387,140 @@
     color: var(--blush);
     background: rgba(196, 139, 152, 0.14);
   }
+
+  /* Catch the Bouquet game */
+  .catch-stage {
+    position: relative;
+    width: 100%;
+    max-width: 280px;
+    height: min(56vh, 420px);
+    margin: 0 auto;
+    border-radius: 14px;
+    background: rgba(253, 246, 236, 0.08);
+    border: 1px solid rgba(253, 246, 236, 0.25);
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .catch-bride {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.6rem;
+    opacity: 1;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    z-index: 3;
+  }
+
+  .catch-bride.windup {
+    animation: brideWindup 0.5s ease;
+  }
+
+  .catch-bride.done {
+    opacity: 0.25;
+    transform: translateX(-50%) translate(-92px, -4px) scale(0.55);
+  }
+
+  @keyframes brideWindup {
+    0% { transform: translateX(-50%) rotate(0deg); }
+    40% { transform: translateX(-50%) rotate(-10deg); }
+    100% { transform: translateX(-50%) rotate(0deg); }
+  }
+
+  .catch-toss {
+    position: absolute;
+    top: 34px;
+    left: 50%;
+    font-size: 1.8rem;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .catch-toss.tossing {
+    animation: bouquetToss 0.7s ease forwards;
+  }
+
+  @keyframes bouquetToss {
+    0% { opacity: 0; transform: translate(-50%, 0) scale(0.7) rotate(0deg); }
+    15% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -170px) scale(1) rotate(300deg); }
+  }
+
+  .catch-hands {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    transform: translateX(-50%);
+    font-size: 2.3rem;
+    line-height: 1;
+    z-index: 3;
+  }
+
+  .catch-bouquet-display {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    width: 0;
+    height: 0;
+  }
+
+  .catch-bouquet-display .bq-flower {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 1.2rem;
+    transform-origin: center bottom;
+  }
+
+  .catch-flower {
+    position: absolute;
+    font-size: 1.5rem;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .catch-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    padding: 1rem;
+    background: rgba(52, 67, 43, 0.88);
+    text-align: center;
+  }
+
+  .catch-overlay[hidden] {
+    display: none;
+  }
+
+  .catch-overlay-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.5rem;
+    color: var(--blush);
+  }
+
+  .catch-overlay-sub {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: rgba(253, 246, 236, 0.85);
+    max-width: 220px;
+  }
+
+  .catch-score {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(253, 246, 236, 0.9);
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -433,6 +567,29 @@
       <div class="game-status" id="game-status">Find all 6 pairs!</div>
       <button class="restart-btn" id="restart-btn">Restart</button>
     </div>
+
+    <div class="tab-panel" id="tab-catch">
+      <div class="game-title">Catch the Bouquet</div>
+      <div class="catch-stage" id="catch-stage">
+        <div class="catch-bride" id="catch-bride">👰</div>
+        <div class="catch-toss" id="catch-toss">💐</div>
+        <div class="catch-hands" id="catch-hands">
+          🤲
+          <div class="catch-bouquet-display" id="catch-bouquet-display"></div>
+        </div>
+        <div class="catch-overlay" id="catch-start-overlay">
+          <div class="catch-overlay-title">Ready to catch?</div>
+          <div class="catch-overlay-sub">Move side to side to catch every flower. Miss one and the bouquet drops!</div>
+          <button class="toast-btn" id="catch-start-btn">Start</button>
+        </div>
+        <div class="catch-overlay" id="catch-gameover-overlay" hidden>
+          <div class="catch-overlay-title">Bouquet Dropped! 💔</div>
+          <div class="catch-overlay-sub" id="catch-final-score">You caught 0 flowers</div>
+          <button class="toast-btn" id="catch-restart-btn">Try Again</button>
+        </div>
+      </div>
+      <div class="catch-score" id="catch-score">🌸 Caught: 0</div>
+    </div>
   </div>
 
   <div class="app-nav">
@@ -447,6 +604,10 @@
     <button class="nav-btn" data-tab="tab-game">
       <span class="nav-icon">🎮</span>
       <span>Game</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-catch">
+      <span class="nav-icon">💐</span>
+      <span>Catch</span>
     </button>
   </div>
 </div>
@@ -467,6 +628,13 @@
 
         if (btn.dataset.tab === 'tab-game' && typeof window.initGameOnce === 'function') {
           window.initGameOnce();
+        }
+
+        if (btn.dataset.tab === 'tab-catch') {
+          if (typeof window.initCatchGameOnce === 'function') window.initCatchGameOnce();
+          if (typeof window.catchGameResume === 'function') window.catchGameResume();
+        } else if (typeof window.catchGamePause === 'function') {
+          window.catchGamePause();
         }
       });
     });
@@ -684,6 +852,242 @@
     };
 
     restartBtn.addEventListener('click', buildGame);
+  })();
+
+  // Catch the Bouquet mini-game
+  (function () {
+    const stage = document.getElementById('catch-stage');
+    const bride = document.getElementById('catch-bride');
+    const toss = document.getElementById('catch-toss');
+    const hands = document.getElementById('catch-hands');
+    const bouquetDisplay = document.getElementById('catch-bouquet-display');
+    const startOverlay = document.getElementById('catch-start-overlay');
+    const gameOverOverlay = document.getElementById('catch-gameover-overlay');
+    const startBtn = document.getElementById('catch-start-btn');
+    const restartBtn = document.getElementById('catch-restart-btn');
+    const finalScoreEl = document.getElementById('catch-final-score');
+    const scoreEl = document.getElementById('catch-score');
+
+    const FLOWER_EMOJIS = ['🌸', '🌷', '🌺', '🌼', '🌻'];
+    const HAND_HALF_WIDTH = 46;
+    const FLOWER_SIZE = 26;
+
+    let flowers = [];
+    let handsX = 0;
+    let score = 0;
+    let playing = false;
+    let paused = false;
+    let rafId = null;
+    let spawnTimer = null;
+    let spawnInterval = 1050;
+    let fallSpeed = 1.6;
+    let initialized = false;
+
+    function stageRect() {
+      return stage.getBoundingClientRect();
+    }
+
+    function clampHandsX() {
+      const rect = stageRect();
+      const min = HAND_HALF_WIDTH;
+      const max = Math.max(min, rect.width - HAND_HALF_WIDTH);
+      handsX = Math.max(min, Math.min(max, handsX));
+    }
+
+    function renderHands() {
+      hands.style.left = handsX + 'px';
+    }
+
+    function setHandsFromClientX(clientX) {
+      const rect = stageRect();
+      handsX = clientX - rect.left;
+      clampHandsX();
+      renderHands();
+    }
+
+    function spawnFlower() {
+      const rect = stageRect();
+      const el = document.createElement('div');
+      el.className = 'catch-flower';
+      const emoji = FLOWER_EMOJIS[Math.floor(Math.random() * FLOWER_EMOJIS.length)];
+      el.textContent = emoji;
+      const x = FLOWER_SIZE / 2 + Math.random() * Math.max(1, rect.width - FLOWER_SIZE);
+      stage.appendChild(el);
+      flowers.push({ el, x, y: -FLOWER_SIZE, speed: fallSpeed + Math.random() * 0.6, emoji });
+    }
+
+    function addToBouquet(index, emoji) {
+      const span = document.createElement('span');
+      span.className = 'bq-flower';
+      span.textContent = emoji;
+
+      // Fan the flowers out in a tight semicircle above the hands, like a held
+      // bouquet. New flowers cycle back through the same spots (with a little
+      // depth variation) instead of stacking upward forever.
+      const FAN_SPOTS = 9;
+      const spot = index % FAN_SPOTS;
+      const angle = -75 + spot * (150 / (FAN_SPOTS - 1)); // -75deg..75deg, 0 = straight up
+      const tier = Math.floor(index / FAN_SPOTS) % 3;
+      const radius = 8 + tier * 6; // small radius so stems converge near the hands
+      const size = 1.3 - tier * 0.15;
+      const sizePx = size * 16;
+
+      const rad = (angle * Math.PI) / 180;
+      const xOff = Math.sin(rad) * radius;
+      const yOff = -Math.cos(rad) * radius;
+      const rot = angle * 0.6; // each flower leans outward, toward its side of the fan
+
+      // Position by the flower's own bottom-center (its "stem tip") rather than
+      // its top-left corner, so the fan is actually centered on the hands.
+      span.style.fontSize = size + 'rem';
+      span.style.zIndex = String(index);
+      span.style.left = (xOff - sizePx / 2).toFixed(1) + 'px';
+      span.style.top = (yOff - sizePx).toFixed(1) + 'px';
+      span.style.transform = `rotate(${rot.toFixed(1)}deg)`;
+      bouquetDisplay.appendChild(span);
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `🌸 Caught: ${score}`;
+    }
+
+    function endGame() {
+      playing = false;
+      clearTimeout(spawnTimer);
+      if (rafId) cancelAnimationFrame(rafId);
+      finalScoreEl.textContent = score === 1 ? 'You caught 1 flower' : `You caught ${score} flowers`;
+      gameOverOverlay.hidden = false;
+      if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+    }
+
+    function gameLoop() {
+      if (!playing) return;
+
+      const rect = stageRect();
+      const catchLineY = rect.height - 26;
+
+      for (let i = flowers.length - 1; i >= 0; i--) {
+        const f = flowers[i];
+        f.y += f.speed;
+        f.el.style.left = (f.x - FLOWER_SIZE / 2) + 'px';
+        f.el.style.top = f.y + 'px';
+
+        if (f.y + FLOWER_SIZE / 2 >= catchLineY) {
+          const dx = Math.abs(f.x - handsX);
+          if (dx <= HAND_HALF_WIDTH) {
+            const caughtEmoji = f.emoji;
+            f.el.remove();
+            flowers.splice(i, 1);
+            score++;
+            addToBouquet(score - 1, caughtEmoji);
+            updateScore();
+            fallSpeed = Math.min(fallSpeed + 0.04, 5);
+            if (spawnInterval > 480) spawnInterval -= 6;
+          } else {
+            endGame();
+            return;
+          }
+        }
+      }
+
+      rafId = requestAnimationFrame(gameLoop);
+    }
+
+    function scheduleSpawn() {
+      if (!playing) return;
+      spawnFlower();
+      spawnTimer = setTimeout(scheduleSpawn, spawnInterval);
+    }
+
+    function startFalling() {
+      scheduleSpawn();
+      rafId = requestAnimationFrame(gameLoop);
+    }
+
+    function resetState() {
+      flowers.forEach(f => f.el.remove());
+      flowers = [];
+      bouquetDisplay.innerHTML = '';
+      score = 0;
+      fallSpeed = 1.6;
+      spawnInterval = 1050;
+      updateScore();
+      const rect = stageRect();
+      handsX = rect.width / 2;
+      renderHands();
+    }
+
+    function playThrowAnimation(cb) {
+      bride.classList.remove('done');
+      bride.classList.add('windup');
+      toss.classList.remove('tossing');
+      void toss.offsetWidth;
+
+      setTimeout(() => {
+        toss.classList.add('tossing');
+      }, 250);
+
+      setTimeout(() => {
+        bride.classList.remove('windup');
+        bride.classList.add('done');
+        cb();
+      }, 950);
+    }
+
+    function startGame() {
+      resetState();
+      startOverlay.hidden = true;
+      gameOverOverlay.hidden = true;
+      playing = true;
+      playThrowAnimation(startFalling);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    stage.addEventListener('pointermove', (e) => {
+      if (!playing) return;
+      setHandsFromClientX(e.clientX);
+    });
+    stage.addEventListener('pointerdown', (e) => {
+      if (!playing) return;
+      setHandsFromClientX(e.clientX);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!playing || !document.getElementById('tab-catch').classList.contains('active')) return;
+      if (e.key === 'ArrowLeft') {
+        handsX -= 26;
+        clampHandsX();
+        renderHands();
+      } else if (e.key === 'ArrowRight') {
+        handsX += 26;
+        clampHandsX();
+        renderHands();
+      }
+    });
+
+    window.initCatchGameOnce = function () {
+      if (initialized) return;
+      initialized = true;
+      const rect = stageRect();
+      handsX = rect.width / 2;
+      renderHands();
+    };
+
+    window.catchGamePause = function () {
+      if (!playing || paused) return;
+      paused = true;
+      clearTimeout(spawnTimer);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+
+    window.catchGameResume = function () {
+      if (!playing || !paused) return;
+      paused = false;
+      scheduleSpawn();
+      rafId = requestAnimationFrame(gameLoop);
+    };
   })();
 </script>
 
