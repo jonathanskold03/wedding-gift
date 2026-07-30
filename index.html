@@ -426,6 +426,62 @@
     z-index: 3;
   }
 
+  .catch-bride-face {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Sheer veil pinned at her crown, flaring out and hanging down behind her.
+     A symmetric oval just reads as a halo, so this is a bell shape: narrow at
+     the top, widening past her shoulders, with faint vertical folds. Negative
+     z-index keeps it behind her face but inside her own layer, so it travels
+     with her through the windup and the exit. */
+  .catch-veil {
+    position: absolute;
+    left: 50%;
+    top: -9%;
+    width: 168%;
+    height: 148%;
+    transform: translateX(-50%);
+    z-index: -1;
+    pointer-events: none;
+    filter: blur(1.1px);
+    clip-path: polygon(
+      40% 0%, 60% 0%,
+      72% 7%, 82% 22%,
+      90% 46%, 97% 74%, 100% 97%,
+      78% 100%, 22% 100%,
+      0% 97%, 3% 74%, 10% 46%,
+      18% 22%, 28% 7%
+    );
+    background:
+      /* faint folds in the fabric */
+      repeating-linear-gradient(94deg,
+        rgba(253, 246, 236, 0.15) 0 3px,
+        rgba(253, 246, 236, 0.04) 3px 8px),
+      /* sheerer the further it falls */
+      linear-gradient(to bottom,
+        rgba(253, 246, 236, 0.34) 0%,
+        rgba(253, 246, 236, 0.2) 38%,
+        rgba(253, 246, 236, 0.09) 72%,
+        rgba(253, 246, 236, 0.01) 100%);
+  }
+
+  /* The little bright comb holding it on, just above her hairline. */
+  .catch-veil::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 1.5%;
+    width: 26%;
+    height: 4%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(253, 246, 236, 0.75);
+  }
+
   .catch-bride.windup {
     animation: brideWindup 0.45s ease;
   }
@@ -478,14 +534,14 @@
     100% { opacity: 0; transform: translate(-50%, -400px) scale(1.05) rotate(340deg); }
   }
 
-  /* The catcher sprite. Her raised hands span ~99% of the sprite width, so a
-     92px width lines the visual up with the 46px catch reach. Her palms sit
-     --palm-from-bottom above the stage floor, which is where the catch line is
-     (see CATCH_POINT_FROM_BOTTOM in the game script — keep the two in step). */
+  /* The catcher sprite. His hands are cupped together above his head, so the
+     catch zone is narrow (~33% of the sprite width) rather than a wide arm
+     span. His palms sit --palm-from-top down from the sprite top; the game
+     script's CATCH_POINT_FROM_BOTTOM must equal --catcher-h minus that. */
   .catch-hands {
-    --catcher-w: 92px;
-    --catcher-h: 78px;
-    --palm-from-top: 16.5px;
+    --catcher-w: 80px;
+    --catcher-h: 92px;
+    --palm-from-top: 11.5px;
     position: absolute;
     bottom: 0;
     left: 0;
@@ -501,6 +557,43 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+  }
+
+  /* Bowtie at his collar, just under the chin. Wings are the two pseudo
+     elements; the knot is the small ellipse painted on the element itself. */
+  /* Blush rather than black — a dark tie vanishes against his navy jacket. */
+  .catch-bowtie {
+    position: absolute;
+    left: 50%;
+    top: 90%;
+    width: 17px;
+    height: 8.5px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse 15% 32% at 50% 50%,
+      #a86e7c 0 99%, transparent 100%);
+  }
+
+  .catch-bowtie::before,
+  .catch-bowtie::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 44%;
+    height: 100%;
+    background: var(--blush);
+  }
+
+  /* Triangles pinched to the knot, so the bowtie silhouette reads even small. */
+  .catch-bowtie::before {
+    left: 0;
+    clip-path: polygon(100% 50%, 0 0, 0 100%);
+  }
+
+  .catch-bowtie::after {
+    right: 0;
+    clip-path: polygon(0 50%, 100% 0, 100% 100%);
   }
 
   /* Hidden below the stage during the bride's intro, then popped up. */
@@ -584,12 +677,14 @@
     transition: opacity 0.3s ease-out;
   }
 
+  /* Above the catcher (3): items now fall past her all the way to the floor,
+     and you need to see the flower land or the cake miss. */
   .catch-flower {
     position: absolute;
     font-size: 1.5rem;
     line-height: 1;
     pointer-events: none;
-    z-index: 2;
+    z-index: 4;
   }
 
   .catch-overlay {
@@ -690,10 +785,14 @@
     <div class="tab-panel" id="tab-catch">
       <div class="game-title">Catch the Bouquet</div>
       <div class="catch-stage" id="catch-stage">
-        <img class="catch-bride" id="catch-bride" src="assets/game/bride-head.png" alt="" />
+        <div class="catch-bride" id="catch-bride">
+          <span class="catch-veil" aria-hidden="true"></span>
+          <img class="catch-bride-face" src="assets/game/bride-head.png" alt="" />
+        </div>
         <div class="catch-toss held" id="catch-toss">💐</div>
         <div class="catch-hands pre-game" id="catch-hands">
           <img class="catch-catcher" src="assets/game/catcher.png" alt="" />
+          <span class="catch-bowtie" aria-hidden="true"></span>
           <div class="catch-bouquet-display" id="catch-bouquet-display"></div>
         </div>
         <div class="catch-overlay" id="catch-start-overlay">
@@ -1010,26 +1109,33 @@
 
     const FLOWER_EMOJIS = ['🌷', '🌺', '🌼', '🌻', '🌹', '🪻'];
     const CAKE_EMOJI = '🍰';
-    const HAND_HALF_WIDTH = 46;
-    // Cake needs a much tighter hitbox than flowers — it should only land on you
-    // if it drops squarely into the hands, so it stays dodgeable.
-    const CAKE_HALF_WIDTH = 38;
+    // Roughly the catcher's own width (sprite is 80px, so 40px either side),
+    // inset a few px so the hitbox stays inside his silhouette. Matching only
+    // his cupped hands (~13px) was accurate but far too punishing to play.
+    const HAND_HALF_WIDTH = 36;
+    // Cake resolves at the floor against his body, same forgiving width.
+    const CAKE_HALF_WIDTH = 36;
     const FLOWER_SIZE = 26;
     const FRAME_MS = 1000 / 60;
-    // Height of the catcher's palms above the stage floor. Must match
-    // --catcher-h minus --palm-from-top in the .catch-hands rule.
-    const CATCH_POINT_FROM_BOTTOM = 61;
+    // Height of the catcher's palms above the stage floor — where a flower can
+    // be caught. Must match --catcher-h minus --palm-from-top in .catch-hands.
+    const CATCH_POINT_FROM_BOTTOM = 81;
 
-    // Difficulty ramps on elapsed play time, then plateaus.
-    const RAMP_MS = 100000;
-    const SPEED_START = 1.5, SPEED_MAX = 4.4;
-    const INTERVAL_START = 1150, INTERVAL_MIN = 560;
+    // Difficulty ramps on elapsed play time, then plateaus. Deliberately short
+    // and front-loaded (see RAMP_CURVE) so a run gets hard quickly rather than
+    // dragging through an easy stretch.
+    const RAMP_MS = 40000;
+    const RAMP_CURVE = 0.7;
+    const SPEED_START = 2.6, SPEED_MAX = 6.6;
+    const INTERVAL_START = 820, INTERVAL_MIN = 380;
     // Guaranteed reaction window between two things reaching the hands.
-    const ARRIVAL_GAP_START = 700, ARRIVAL_GAP_MIN = 430;
+    const ARRIVAL_GAP_START = 520, ARRIVAL_GAP_MIN = 330;
     // Vertical spacing floor: comfortably more than a sprite, so nothing overlaps.
     const MIN_SEPARATION_PX = 64;
-    const CAKE_GRACE_MS = 12000;
-    const CAKE_CHANCE_START = 0.10, CAKE_CHANCE_MAX = 0.30;
+    // Peak horizontal drift a falling item can accumulate from its sway.
+    const MAX_DRIFT_CAKE = 6, MAX_DRIFT_FLOWER = 12;
+    const CAKE_GRACE_MS = 4000;
+    const CAKE_CHANCE_START = 0.12, CAKE_CHANCE_MAX = 0.38;
 
     let flowers = [];
     let handsX = 0;
@@ -1043,13 +1149,16 @@
     let elapsedMs = 0;
     let lastFrameAt = 0;
     let lastStageH = 0;
+    let pendingWave = null;
 
     // Every item shares one fall speed. Per-item random speeds let a later fast
     // item overtake an earlier slow one, so two things could reach the hands at
     // once in different places — an unavoidable loss. A shared speed preserves
     // spawn spacing exactly, so arrivals stay in order and separated.
+    // Front-loaded: the curve exponent makes difficulty climb fast in the first
+    // seconds, so ~60% of full difficulty is reached by the 20s mark.
     function ramp() {
-      return Math.min(1, elapsedMs / RAMP_MS);
+      return Math.pow(Math.min(1, elapsedMs / RAMP_MS), RAMP_CURVE);
     }
 
     function currentSpeed() {
@@ -1066,10 +1175,26 @@
       return CAKE_CHANCE_START + d * (CAKE_CHANCE_MAX - CAKE_CHANCE_START);
     }
 
-    // Minimum vertical spacing a new item needs behind the last one.
-    function minSeparationPx() {
+    // Minimum vertical spacing a new item needs behind the one ahead of it.
+    // Flowers resolve at her hands, cake resolves at the floor. So a cake
+    // followed by a flower has its two resolutions CATCH_POINT_FROM_BOTTOM
+    // closer together than the spacing implies, and only that pairing needs
+    // the extra height. Padding every gap just thins the game out.
+    function minSeparationPx(aheadIsCake, newIsCake) {
       const gapMs = ARRIVAL_GAP_START - ramp() * (ARRIVAL_GAP_START - ARRIVAL_GAP_MIN);
-      return Math.max(MIN_SEPARATION_PX, currentSpeed() * (gapMs / FRAME_MS));
+      const byTime = currentSpeed() * (gapMs / FRAME_MS);
+      const base = Math.max(MIN_SEPARATION_PX, byTime);
+      const extra = (aheadIsCake && !newIsCake) ? CATCH_POINT_FROM_BOTTOM : 0;
+      return base + extra;
+    }
+
+    // Irregular rhythm: vary the gap between releases, with an occasional
+    // breather. Safe to randomise freely — the separation gate below still
+    // enforces the floor, so a short gap can never become a double arrival.
+    function nextSpawnDelay() {
+      const jitter = 0.55 + Math.random() * 0.85;
+      const breather = Math.random() < 0.12 ? 1.5 + Math.random() * 0.7 : 1;
+      return currentInterval() * jitter * breather;
     }
 
     function stageRect() {
@@ -1094,13 +1219,10 @@
       renderHands();
     }
 
-    function spawnFlower() {
-      const rect = stageRect();
+    // Type and x are chosen by the wave planner below. Everything sways; the
+    // planner's clearances are padded by MAX_DRIFT_* to absorb it.
+    function spawnItem(isCake, x) {
       const el = document.createElement('div');
-
-      // Cake shows up after a grace period, then gets steadily more common.
-      // Catching it ends the run, so it has to be dodged.
-      const isCake = Math.random() < currentCakeChance();
 
       el.className = isCake ? 'catch-flower is-cake' : 'catch-flower';
       const emoji = isCake
@@ -1108,22 +1230,28 @@
         : FLOWER_EMOJIS[Math.floor(Math.random() * FLOWER_EMOJIS.length)];
       el.textContent = emoji;
 
-      // Keep spawns inside the hands' reachable span so nothing is uncatchable,
-      // and don't drop a cake right on top of where the last flower is heading.
+      const rect = stageRect();
       const minX = FLOWER_SIZE / 2;
       const maxX = Math.max(minX + 1, rect.width - FLOWER_SIZE / 2);
-      let x = minX + Math.random() * (maxX - minX);
 
-      const prev = flowers.length ? flowers[flowers.length - 1] : null;
-      if (prev && prev.isCake !== isCake && Math.abs(x - prev.x) < 42) {
-        // Nudge to the roomier side so a catch and a dodge aren't stacked in one column.
-        x = (prev.x - minX) > (maxX - prev.x)
-          ? Math.max(minX, prev.x - 52)
-          : Math.min(maxX, prev.x + 52);
-      }
+      // Per-item drift and tilt so the fall looks organic rather than a grid.
+      // These only affect x and appearance — y is always the shared speed, which
+      // is what keeps arrivals ordered and separated.
+      const swayAmp = isCake
+        ? MAX_DRIFT_CAKE / 2 + Math.random() * (MAX_DRIFT_CAKE / 2)
+        : MAX_DRIFT_FLOWER / 2 + Math.random() * (MAX_DRIFT_FLOWER / 2);
+      const swayFreq = 0.010 + Math.random() * 0.012;
+      const swayPhase = Math.random() * Math.PI * 2;
+      const tilt = (Math.random() - 0.5) * 24;
+      const spinRate = (Math.random() - 0.5) * 0.05;
+      const scale = isCake ? 1 : 0.9 + Math.random() * 0.28;
 
       stage.appendChild(el);
-      flowers.push({ el, x, y: -FLOWER_SIZE, emoji, isCake });
+      flowers.push({
+        el, x, baseX: x, y: -FLOWER_SIZE, emoji, isCake,
+        swayAmp, swayFreq, swayPhase, tilt, spinRate, scale,
+        minX, maxX
+      });
     }
 
     // Frosting splatter across the bouquet and out over the stage.
@@ -1179,20 +1307,30 @@
       span.className = 'bq-flower';
       span.textContent = emoji;
 
-      // Fan the flowers out in a tight semicircle above the hands, like a held
-      // bouquet. New flowers cycle back through the same spots (with a little
-      // depth variation) instead of stacking upward forever.
-      const FAN_SPOTS = 9;
-      const spot = index % FAN_SPOTS;
-      const angle = -75 + spot * (150 / (FAN_SPOTS - 1)); // -75deg..75deg, 0 = straight up
-      const tier = Math.floor(index / FAN_SPOTS) % 3;
-      const size = 1.3 - tier * 0.15;
+      // The bouquet grows in layers. It starts as a tight little fan; once a
+      // layer is full the next one fills a wider arc that sits BEHIND it, so
+      // the bunch keeps visibly building out as the run goes on.
+      const SPOTS_BASE = 7, SPOTS_STEP = 2;
+      let tier = 0, spot = index;
+      for (;;) {
+        const capacity = SPOTS_BASE + tier * SPOTS_STEP;
+        if (spot < capacity) break;
+        spot -= capacity;
+        tier++;
+      }
+      const capacity = SPOTS_BASE + tier * SPOTS_STEP;
+
+      // Outer layers wrap a little further round, and sit slightly smaller so
+      // the depth reads.
+      const spread = Math.min(184, 148 + tier * 9);
+      const angle = capacity === 1 ? 0 : -spread / 2 + spot * (spread / (capacity - 1));
+      const size = Math.max(0.85, 1.15 - tier * 0.06);
 
       // Elliptical fan: wide horizontally for the semicircle spread, shallow
       // vertically so the blooms stay low. STEM_DROP pushes the stem tips down
       // into the hands so the bouquet sits in them with no floating gap.
-      const xRadius = 11 + tier * 5;
-      const yRadius = 9 + tier * 4;
+      const xRadius = Math.min(46, 7 + tier * 6);
+      const yRadius = Math.min(34, 6 + tier * 4.5);
       const STEM_DROP = 13;
 
       const rad = (angle * Math.PI) / 180;
@@ -1205,7 +1343,9 @@
       // rendered size. An emoji's advance width is ~1.37x its font-size, so
       // deriving the offset from font-size instead skews the fan sideways.
       span.style.fontSize = size + 'rem';
-      span.style.zIndex = String(index);
+      // Lower tiers stay in front, so each new layer tucks in behind the last.
+      // Kept positive so the whole bouquet still draws over the catcher sprite.
+      span.style.zIndex = String(Math.max(1, 100 - tier));
       span.style.transform =
         `translate(calc(-50% + ${xOff.toFixed(1)}px), calc(-100% + ${yOff.toFixed(1)}px)) ` +
         `rotate(${rot.toFixed(1)}deg)`;
@@ -1252,78 +1392,189 @@
       }
       lastStageH = rect.height;
 
-      const catchLineY = rect.height - CATCH_POINT_FROM_BOTTOM;
+      const catchLineY = rect.height - CATCH_POINT_FROM_BOTTOM; // her hands
+      const floorY = rect.height;                               // stage floor
       const speed = currentSpeed();
 
       for (let i = flowers.length - 1; i >= 0; i--) {
         const f = flowers[i];
         f.y += speed;
+
+        // Sway is driven by distance fallen, so it's smooth and frame-rate
+        // independent. Clamped to the spawn bounds so nothing drifts off-stage.
+        const sway = Math.sin(f.y * f.swayFreq + f.swayPhase) * f.swayAmp;
+        f.x = Math.max(f.minX, Math.min(f.maxX, f.baseX + sway));
+
         f.el.style.left = (f.x - FLOWER_SIZE / 2) + 'px';
         f.el.style.top = f.y + 'px';
+        f.el.style.transform =
+          `rotate(${(f.tilt + f.y * f.spinRate).toFixed(1)}deg) scale(${f.scale.toFixed(2)})`;
 
-        if (f.y + FLOWER_SIZE / 2 >= catchLineY) {
-          const reach = f.isCake ? CAKE_HALF_WIDTH : HAND_HALF_WIDTH;
-          const caught = Math.abs(f.x - handsX) <= reach;
+        const atHands = f.y + FLOWER_SIZE / 2 >= catchLineY;
+        const atFloor = f.y + FLOWER_SIZE / 2 >= floorY;
 
-          if (f.isCake) {
-            // Resolve a cake exactly once, on the frame it reaches the hands.
-            // Without this it stays catchable on every later frame, so sliding
-            // under a cake that already dropped past would still splat you.
-            if (!f.resolved) {
-              f.resolved = true;
-              if (caught) {
-                f.el.remove();
-                flowers.splice(i, 1);
-                splashCake(handsX, catchLineY);
-                endGame('cake');
-                return;
-              }
-            }
-            // Dodged — fade it out promptly so it can't visually collide with
-            // the next flower arriving in the same column.
-            if (!f.el.classList.contains('dodged')) f.el.classList.add('dodged');
-            if (f.y > catchLineY + 40) {
+        if (f.isCake) {
+          // Cake falls the whole way and only lands when it hits the floor.
+          // Resolved exactly once, so sliding under one that already passed
+          // can't splat you.
+          if (atFloor && !f.resolved) {
+            f.resolved = true;
+            if (Math.abs(f.x - handsX) <= CAKE_HALF_WIDTH) {
               f.el.remove();
               flowers.splice(i, 1);
+              splashCake(f.x, floorY - 12);
+              endGame('cake');
+              return;
             }
-            continue;
+            f.el.classList.add('dodged');
           }
+          if (f.y > floorY + 24) {
+            f.el.remove();
+            flowers.splice(i, 1);
+          }
+          continue;
+        }
 
-          if (caught) {
+        // Flowers are catchable as they pass her raised hands...
+        if (atHands && !f.resolved) {
+          f.resolved = true;
+          if (Math.abs(f.x - handsX) <= HAND_HALF_WIDTH) {
             const caughtEmoji = f.emoji;
             f.el.remove();
             flowers.splice(i, 1);
             score++;
             addToBouquet(score - 1, caughtEmoji);
             updateScore();
-          } else {
-            endGame('miss');
-            return;
+            continue;
           }
+          f.missed = true;
+        }
+
+        // ...and a missed one keeps falling, only ending the run once it
+        // actually hits the floor.
+        if (f.missed && atFloor) {
+          endGame('miss');
+          return;
         }
       }
 
       rafId = requestAnimationFrame(gameLoop);
     }
 
+    // --- Waves -------------------------------------------------------------
+    // A wave is one or more items released together on the same row: cakes in
+    // pairs (or triples once it's hard) to wall off the screen, optionally with
+    // a flower alongside so you have to thread between them.
+    // Everything drifts as it falls, so every clearance below is padded by the
+    // worst case: two neighbours swaying toward each other at full amplitude.
+    const CAKE_PAIR_DRIFT = MAX_DRIFT_CAKE * 2;                 // 12
+    const MIXED_DRIFT = MAX_DRIFT_CAKE + MAX_DRIFT_FLOWER;      // 18
+
+    // No two sprites in a row may overlap, even at closest drift.
+    const WAVE_MIN_SEP = 48 + CAKE_PAIR_DRIFT;                  // 60
+    // A flower must stay outside every cake's landing zone for the whole fall.
+    const FLOWER_CLEAR = CAKE_HALF_WIDTH + 8 + MIXED_DRIFT;     // 62
+    // Safe-standing test allows for the cakes themselves drifting.
+    const CORRIDOR_CLEAR = CAKE_HALF_WIDTH + 2 + MAX_DRIFT_CAKE; // 44
+
+    function planWave() {
+      const d = ramp();
+      let cakes = 0;
+      if (Math.random() < currentCakeChance()) {
+        cakes = 1;
+        if (Math.random() < 0.25 + d * 0.5) cakes = 2;
+        if (cakes === 2 && d > 0.55 && Math.random() < (d - 0.55) * 1.1) cakes = 3;
+      }
+      // With cakes present a flower often rides along, more often as it hardens.
+      const flower = cakes === 0 ? true : Math.random() < 0.35 + d * 0.45;
+      return { cakes, flower };
+    }
+
+    // The player must always have somewhere safe to stand when these cakes land.
+    function hasSafeCorridor(cakeXs, rect) {
+      const lo = HAND_HALF_WIDTH;
+      const hi = Math.max(lo, rect.width - HAND_HALF_WIDTH);
+      for (let x = lo; x <= hi; x += 4) {
+        if (cakeXs.every(c => Math.abs(x - c) > CORRIDOR_CLEAR)) return true;
+      }
+      return false;
+    }
+
+    // Lay a wave out, or return null if this composition won't fit fairly.
+    function placeWave(plan, rect) {
+      const minX = FLOWER_SIZE / 2;
+      const maxX = Math.max(minX + 1, rect.width - FLOWER_SIZE / 2);
+      const span = maxX - minX;
+
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const cakeXs = [];
+        let ok = true;
+        for (let i = 0; i < plan.cakes; i++) {
+          const x = minX + Math.random() * span;
+          if (cakeXs.some(o => Math.abs(o - x) < WAVE_MIN_SEP)) { ok = false; break; }
+          cakeXs.push(x);
+        }
+        if (!ok) continue;
+        if (cakeXs.length && !hasSafeCorridor(cakeXs, rect)) continue;
+
+        let flowerX = null;
+        if (plan.flower) {
+          let placed = false;
+          for (let t = 0; t < 30; t++) {
+            const x = minX + Math.random() * span;
+            // Far enough from every cake that standing here to catch is already
+            // outside their landing zones — no scramble required.
+            if (cakeXs.every(c => Math.abs(c - x) >= FLOWER_CLEAR)) { flowerX = x; placed = true; break; }
+          }
+          if (!placed) continue;
+        }
+        return { cakeXs, flowerX };
+      }
+      return null;
+    }
+
     function scheduleSpawn() {
       if (!playing) return;
 
-      // Don't release a new item until the highest one in play is far enough
-      // ahead. Because everything falls at the same speed, this spacing is
-      // preserved all the way down, so two things can never reach the hands
-      // together and sprites never overlap.
+      // Plan the wave up front: the spacing it needs depends on what it holds
+      // and on what is ahead of it. Held across deferrals so waiting doesn't
+      // quietly re-roll the odds.
+      if (pendingWave === null) pendingWave = planWave();
+
+      // Don't release it until the wave ahead is far enough down. Everything
+      // falls at the same speed, so this spacing is preserved all the way down:
+      // separate waves never collide, and only same-wave items resolve together.
       let topY = Infinity;
       for (const f of flowers) if (f.y < topY) topY = f.y;
+      const aheadWaveHasCake = topY === Infinity
+        ? false
+        : flowers.some(f => f.isCake && f.y - topY < 3);
       const gapBehind = topY === Infinity ? Infinity : topY + FLOWER_SIZE;
 
-      if (gapBehind < minSeparationPx()) {
+      if (gapBehind < minSeparationPx(aheadWaveHasCake, pendingWave.flower)) {
         spawnTimer = setTimeout(scheduleSpawn, 70);
         return;
       }
 
-      spawnFlower();
-      spawnTimer = setTimeout(scheduleSpawn, currentInterval());
+      const rect = stageRect();
+      // Step the composition down until it fits fairly on this stage width.
+      let plan = { cakes: pendingWave.cakes, flower: pendingWave.flower };
+      let placement = placeWave(plan, rect);
+      while (!placement && plan.cakes > 0) {
+        plan = { cakes: plan.cakes - 1, flower: plan.flower };
+        placement = placeWave(plan, rect);
+      }
+      if (!placement) placement = { cakeXs: [], flowerX: null };
+
+      placement.cakeXs.forEach(x => spawnItem(true, x));
+      if (placement.flowerX !== null) spawnItem(false, placement.flowerX);
+      // Never let a wave come out empty, or the run would stall.
+      if (!placement.cakeXs.length && placement.flowerX === null) {
+        spawnItem(false, FLOWER_SIZE / 2 + Math.random() * Math.max(1, rect.width - FLOWER_SIZE));
+      }
+
+      pendingWave = null;
+      spawnTimer = setTimeout(scheduleSpawn, nextSpawnDelay());
     }
 
     function startFalling() {
@@ -1340,6 +1591,7 @@
       elapsedMs = 0;
       lastFrameAt = 0;
       lastStageH = 0;
+      pendingWave = null;
       updateScore();
       const rect = stageRect();
       handsX = rect.width / 2;
