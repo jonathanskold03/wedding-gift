@@ -165,6 +165,13 @@
     display: flex;
   }
 
+  /* Centring a flex column pushes any overflow out of BOTH ends, where it can't
+     be scrolled to. The game stage flexes to fit, so start-align it instead —
+     that way if space is ever too tight it clips nothing and scrolls normally. */
+  #tab-catch {
+    justify-content: flex-start;
+  }
+
   .message {
     font-size: 1rem;
     line-height: 1.55;
@@ -386,11 +393,16 @@
   }
 
   /* Catch the Bouquet game */
+  /* Sized from the space the panel actually has, not from vh. On iOS Safari vh
+     refers to the viewport with the toolbars hidden, so a vh-based height
+     overflows the visible area and the frame gets clipped at both ends. */
   .catch-stage {
     position: relative;
     width: 100%;
     max-width: 22rem;
-    height: min(64vh, 480px);
+    flex: 1 1 auto;
+    min-height: 200px;
+    max-height: 480px;
     margin: 0 auto;
     border-radius: 14px;
     background: rgba(253, 246, 236, 0.08);
@@ -398,7 +410,6 @@
     overflow: hidden;
     touch-action: none;
     user-select: none;
-    flex-shrink: 0;
   }
 
   /* Intro: she sits at the bottom centre holding the bouquet, throws it up, then
@@ -705,6 +716,26 @@
 </div>
 
 <script>
+  // Pin the app to the actually-visible viewport height. iOS Safari before
+  // 15.4 has no dvh and its vh is the toolbar-hidden viewport, so the layout
+  // ends up taller than the screen and the bottom gets cut off.
+  (function () {
+    const body = document.body;
+
+    function applyHeight() {
+      const vv = window.visualViewport;
+      const h = Math.round(vv && vv.height ? vv.height : window.innerHeight);
+      if (h > 0) body.style.height = h + 'px';
+    }
+
+    applyHeight();
+    window.addEventListener('resize', applyHeight);
+    window.addEventListener('orientationchange', () => setTimeout(applyHeight, 120));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', applyHeight);
+    }
+  })();
+
   // Tab navigation
   (function () {
     const navBtns = document.querySelectorAll('.nav-btn');
@@ -992,6 +1023,7 @@
     let introTimers = [];
     let elapsedMs = 0;
     let lastFrameAt = 0;
+    let lastStageH = 0;
 
     // Every item shares one fall speed. Per-item random speeds let a later fast
     // item overtake an earlier slow one, so two things could reach the hands at
@@ -1191,6 +1223,16 @@
       lastFrameAt = ts;
 
       const rect = stageRect();
+
+      // The stage can resize (rotation, iOS toolbar). Shift anything in flight by
+      // the same amount so each item keeps its distance to the catch line —
+      // otherwise a shrink would drop the line past them and end the run unfairly.
+      if (lastStageH && rect.height !== lastStageH) {
+        const dh = rect.height - lastStageH;
+        for (const f of flowers) f.y += dh;
+      }
+      lastStageH = rect.height;
+
       const catchLineY = rect.height - 26;
       const speed = currentSpeed();
 
@@ -1278,6 +1320,7 @@
       score = 0;
       elapsedMs = 0;
       lastFrameAt = 0;
+      lastStageH = 0;
       updateScore();
       const rect = stageRect();
       handsX = rect.width / 2;
