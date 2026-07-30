@@ -478,14 +478,29 @@
     100% { opacity: 0; transform: translate(-50%, -400px) scale(1.05) rotate(340deg); }
   }
 
+  /* The catcher sprite. Her raised hands span ~99% of the sprite width, so a
+     92px width lines the visual up with the 46px catch reach. Her palms sit
+     --palm-from-bottom above the stage floor, which is where the catch line is
+     (see CATCH_POINT_FROM_BOTTOM in the game script — keep the two in step). */
   .catch-hands {
+    --catcher-w: 92px;
+    --catcher-h: 78px;
+    --palm-from-top: 16.5px;
     position: absolute;
-    bottom: 10px;
+    bottom: 0;
     left: 0;
     transform: translateX(-50%);
-    font-size: 2.3rem;
+    width: var(--catcher-w);
+    height: var(--catcher-h);
     line-height: 1;
     z-index: 3;
+  }
+
+  .catch-catcher {
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
   }
 
   /* Hidden below the stage during the bride's intro, then popped up. */
@@ -503,9 +518,10 @@
     100% { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
+  /* Anchored to her palms so caught flowers gather in her raised hands. */
   .catch-bouquet-display {
     position: absolute;
-    bottom: 100%;
+    top: var(--palm-from-top);
     left: 50%;
     width: 0;
     height: 0;
@@ -677,7 +693,7 @@
         <img class="catch-bride" id="catch-bride" src="assets/game/bride-head.png" alt="" />
         <div class="catch-toss held" id="catch-toss">💐</div>
         <div class="catch-hands pre-game" id="catch-hands">
-          🤲
+          <img class="catch-catcher" src="assets/game/catcher.png" alt="" />
           <div class="catch-bouquet-display" id="catch-bouquet-display"></div>
         </div>
         <div class="catch-overlay" id="catch-start-overlay">
@@ -1000,6 +1016,9 @@
     const CAKE_HALF_WIDTH = 38;
     const FLOWER_SIZE = 26;
     const FRAME_MS = 1000 / 60;
+    // Height of the catcher's palms above the stage floor. Must match
+    // --catcher-h minus --palm-from-top in the .catch-hands rule.
+    const CATCH_POINT_FROM_BOTTOM = 61;
 
     // Difficulty ramps on elapsed play time, then plateaus.
     const RAMP_MS = 100000;
@@ -1233,7 +1252,7 @@
       }
       lastStageH = rect.height;
 
-      const catchLineY = rect.height - 26;
+      const catchLineY = rect.height - CATCH_POINT_FROM_BOTTOM;
       const speed = currentSpeed();
 
       for (let i = flowers.length - 1; i >= 0; i--) {
