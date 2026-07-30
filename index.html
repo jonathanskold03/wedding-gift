@@ -1362,10 +1362,10 @@
       if (rafId) cancelAnimationFrame(rafId);
       const flowerCount = score === 1 ? '1 flower' : `${score} flowers`;
       if (reason === 'cake') {
-        gameOverTitle.textContent = 'Cake to the Face! 🍰';
-        finalScoreEl.textContent = `Frosted at ${flowerCount} — dodge the cake next time!`;
+        gameOverTitle.textContent = 'Caked! 🍰';
+        finalScoreEl.textContent = `You caught ${flowerCount}`;
       } else {
-        gameOverTitle.textContent = 'Bouquet Dropped! 💔';
+        gameOverTitle.textContent = 'Flower dropped! 💔';
         finalScoreEl.textContent = `You caught ${flowerCount}`;
       }
       // Cake splash needs a beat to play before the overlay covers it.
