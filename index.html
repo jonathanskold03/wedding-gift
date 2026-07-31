@@ -1109,17 +1109,22 @@
 
     const FLOWER_EMOJIS = ['🌷', '🌺', '🌼', '🌻', '🌹', '🪻'];
     const CAKE_EMOJI = '🍰';
-    // Roughly the catcher's own width (sprite is 80px, so 40px either side),
-    // inset a few px so the hitbox stays inside his silhouette. Matching only
-    // his cupped hands (~13px) was accurate but far too punishing to play.
-    const HAND_HALF_WIDTH = 36;
-    // Cake resolves at the floor against his body, same forgiving width.
-    const CAKE_HALF_WIDTH = 36;
+    // The catcher's own width (sprite is 80px, so 40px either side) — his
+    // raised arms span nearly the full sprite, so the hitbox matches that
+    // full width rather than being inset inside it.
+    const HAND_HALF_WIDTH = 40;
+    // Same width — both items collide against the same silhouette.
+    const CAKE_HALF_WIDTH = 40;
     const FLOWER_SIZE = 26;
     const FRAME_MS = 1000 / 60;
-    // Height of the catcher's palms above the stage floor — where a flower can
-    // be caught. Must match --catcher-h minus --palm-from-top in .catch-hands.
+    // Height of the catcher's palms above the stage floor — the top of the
+    // collision zone for both flowers and cake. Must match --catcher-h minus
+    // --palm-from-top in .catch-hands.
     const CATCH_POINT_FROM_BOTTOM = 81;
+    // How far short of the true floor the collision zone stops, for both
+    // flowers and cake. His torso is still there, but the very base (feet)
+    // is a guaranteed-safe/uncatchable stretch.
+    const BOTTOM_SAFE_MARGIN = 22;
 
     // Difficulty ramps on elapsed play time, then plateaus. Deliberately short
     // and front-loaded (see RAMP_CURVE) so a run gets hard quickly rather than
@@ -1176,16 +1181,13 @@
     }
 
     // Minimum vertical spacing a new item needs behind the one ahead of it.
-    // Flowers resolve at her hands, cake resolves at the floor. So a cake
-    // followed by a flower has its two resolutions CATCH_POINT_FROM_BOTTOM
-    // closer together than the spacing implies, and only that pairing needs
-    // the extra height. Padding every gap just thins the game out.
-    function minSeparationPx(aheadIsCake, newIsCake) {
+    // Flowers and cake now share the same collision zone (hands down to the
+    // bottom safe margin), so both can resolve as early as the same line —
+    // no extra padding needed between mixed pairs.
+    function minSeparationPx() {
       const gapMs = ARRIVAL_GAP_START - ramp() * (ARRIVAL_GAP_START - ARRIVAL_GAP_MIN);
       const byTime = currentSpeed() * (gapMs / FRAME_MS);
-      const base = Math.max(MIN_SEPARATION_PX, byTime);
-      const extra = (aheadIsCake && !newIsCake) ? CATCH_POINT_FROM_BOTTOM : 0;
-      return base + extra;
+      return Math.max(MIN_SEPARATION_PX, byTime);
     }
 
     // Irregular rhythm: vary the gap between releases, with an occasional
@@ -1392,8 +1394,11 @@
       }
       lastStageH = rect.height;
 
-      const catchLineY = rect.height - CATCH_POINT_FROM_BOTTOM; // her hands
+      const catchLineY = rect.height - CATCH_POINT_FROM_BOTTOM; // top of the collision zone, his raised hands
       const floorY = rect.height;                               // stage floor
+      // Bottom of the collision zone, for both flowers and cake — his very
+      // feet/base stay a guaranteed-safe stretch below this line.
+      const bottomLineY = floorY - BOTTOM_SAFE_MARGIN;
       const speed = currentSpeed();
 
       for (let i = flowers.length - 1; i >= 0; i--) {
@@ -1410,23 +1415,27 @@
         f.el.style.transform =
           `rotate(${(f.tilt + f.y * f.spinRate).toFixed(1)}deg) scale(${f.scale.toFixed(2)})`;
 
-        const atHands = f.y + FLOWER_SIZE / 2 >= catchLineY;
-        const atFloor = f.y + FLOWER_SIZE / 2 >= floorY;
+        const inZone = f.y + FLOWER_SIZE / 2 >= catchLineY;
+        const pastZone = f.y + FLOWER_SIZE / 2 >= bottomLineY;
 
         if (f.isCake) {
-          // Cake falls the whole way and only lands when it hits the floor.
-          // Resolved exactly once, so sliding under one that already passed
-          // can't splat you.
-          if (atFloor && !f.resolved) {
-            f.resolved = true;
+          // Live across the whole zone — hands down to the bottom safe
+          // margin — checked every frame, so lining up anywhere in that
+          // range still kills you. Resolved exactly once, so sliding under
+          // one that already passed can't splat you.
+          if (!f.resolved && inZone) {
             if (Math.abs(f.x - handsX) <= CAKE_HALF_WIDTH) {
+              f.resolved = true;
               f.el.remove();
               flowers.splice(i, 1);
-              splashCake(f.x, floorY - 12);
+              splashCake(f.x, f.y);
               endGame('cake');
               return;
             }
-            f.el.classList.add('dodged');
+            if (pastZone) {
+              f.resolved = true;
+              f.el.classList.add('dodged');
+            }
           }
           if (f.y > floorY + 24) {
             f.el.remove();
@@ -1435,11 +1444,14 @@
           continue;
         }
 
-        // Flowers are catchable as they pass her raised hands...
-        if (atHands && !f.resolved) {
-          f.resolved = true;
+        // Catchable the whole way down his silhouette — hands, torso, right
+        // down to the bottom safe margin — not just at one line. Checked
+        // every frame once in range, so lining up late still lands it. Only
+        // a flower that passes the bottom margin still unaligned is a miss.
+        if (!f.resolved && inZone) {
           if (Math.abs(f.x - handsX) <= HAND_HALF_WIDTH) {
             const caughtEmoji = f.emoji;
+            f.resolved = true;
             f.el.remove();
             flowers.splice(i, 1);
             score++;
@@ -1447,14 +1459,10 @@
             updateScore();
             continue;
           }
-          f.missed = true;
-        }
-
-        // ...and a missed one keeps falling, only ending the run once it
-        // actually hits the floor.
-        if (f.missed && atFloor) {
-          endGame('miss');
-          return;
+          if (pastZone) {
+            endGame('miss');
+            return;
+          }
         }
       }
 
@@ -1473,9 +1481,9 @@
     // No two sprites in a row may overlap, even at closest drift.
     const WAVE_MIN_SEP = 48 + CAKE_PAIR_DRIFT;                  // 60
     // A flower must stay outside every cake's landing zone for the whole fall.
-    const FLOWER_CLEAR = CAKE_HALF_WIDTH + 8 + MIXED_DRIFT;     // 62
+    const FLOWER_CLEAR = CAKE_HALF_WIDTH + 8 + MIXED_DRIFT;     // 66
     // Safe-standing test allows for the cakes themselves drifting.
-    const CORRIDOR_CLEAR = CAKE_HALF_WIDTH + 2 + MAX_DRIFT_CAKE; // 44
+    const CORRIDOR_CLEAR = CAKE_HALF_WIDTH + 2 + MAX_DRIFT_CAKE; // 48
 
     function planWave() {
       const d = ramp();
@@ -1546,12 +1554,9 @@
       // separate waves never collide, and only same-wave items resolve together.
       let topY = Infinity;
       for (const f of flowers) if (f.y < topY) topY = f.y;
-      const aheadWaveHasCake = topY === Infinity
-        ? false
-        : flowers.some(f => f.isCake && f.y - topY < 3);
       const gapBehind = topY === Infinity ? Infinity : topY + FLOWER_SIZE;
 
-      if (gapBehind < minSeparationPx(aheadWaveHasCake, pendingWave.flower)) {
+      if (gapBehind < minSeparationPx()) {
         spawnTimer = setTimeout(scheduleSpawn, 70);
         return;
       }
