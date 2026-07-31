@@ -68,15 +68,6 @@
     flex-shrink: 0;
   }
 
-  .eyebrow {
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    font-size: 0.6rem;
-    color: var(--sage-light);
-    margin-bottom: 0.3rem;
-    padding: 0 3rem;
-  }
-
   h1 {
     font-family: 'Dancing Script', cursive;
     font-size: clamp(1.9rem, 8.5vw, 2.6rem);
@@ -602,6 +593,12 @@
     transform: translateX(-50%) translateY(160%);
   }
 
+  /* On game over, sit above the dark overlay (6) instead of under it, so he
+     and the bouquet already in his hands show at full brightness. */
+  .catch-hands.game-over {
+    z-index: 8;
+  }
+
   .catch-hands.popping {
     animation: handsPop 0.4s cubic-bezier(0.2, 1.35, 0.4, 1) forwards;
   }
@@ -735,9 +732,8 @@
 
 <div class="app">
   <div class="app-header">
-    <div class="eyebrow">A little something for the newlyweds</div>
-    <h1>Angelika <span class="amp">&amp;</span> Stanislaw</h1>
     <div class="date">01 August 2026</div>
+    <h1>Angelika <span class="amp">&amp;</span> Stanislaw</h1>
     <div class="counter" id="married-counter"></div>
     <div class="divider"></div>
   </div>
@@ -783,7 +779,6 @@
     </div>
 
     <div class="tab-panel" id="tab-catch">
-      <div class="game-title">Catch the Bouquet</div>
       <div class="catch-stage" id="catch-stage">
         <div class="catch-bride" id="catch-bride">
           <span class="catch-veil" aria-hidden="true"></span>
@@ -952,7 +947,7 @@
 
   // "Married for" / countdown ticker
   (function () {
-    const target = new Date('2026-08-01T12:00:00');
+    const target = new Date('2026-08-01T16:00:00');
     const el = document.getElementById('married-counter');
 
     function pad(n) {
@@ -961,21 +956,18 @@
 
     function update() {
       const diff = new Date() - target;
-      const upcoming = diff < 0;
+      const sign = diff < 0 ? '-' : '';
       const total = Math.abs(diff);
 
       const days = Math.floor(total / 86400000);
       const hours = Math.floor((total % 86400000) / 3600000);
       const mins = Math.floor((total % 3600000) / 60000);
-      const secs = Math.floor((total % 60000) / 1000);
 
-      el.textContent = upcoming
-        ? `💍 ${days}d ${pad(hours)}h ${pad(mins)}m ${pad(secs)}s until "I do"`
-        : `💍 Married for ${days}d ${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`;
+      el.textContent = `💍 Married for ${sign}${days}d ${pad(hours)}h ${pad(mins)}m`;
     }
 
     update();
-    setInterval(update, 1000);
+    setInterval(update, 60000);
   })();
 
   // Background music toggle (drop your own file at assets/song.mp3)
@@ -1141,6 +1133,13 @@
     const MAX_DRIFT_CAKE = 6, MAX_DRIFT_FLOWER = 12;
     const CAKE_GRACE_MS = 4000;
     const CAKE_CHANCE_START = 0.12, CAKE_CHANCE_MAX = 0.38;
+    // A second, much slower ramp that keeps climbing well past RAMP_MS, so a
+    // long run keeps getting harder instead of flatlining at 40s. It plateaus
+    // too, just much later — brutal, but never literally impossible.
+    const LATE_RAMP_MS = 90000;
+    const SPEED_LATE_MAX = 8.4;
+    const INTERVAL_LATE_MIN = 300;
+    const CAKE_CHANCE_LATE_MAX = 0.56;
 
     let flowers = [];
     let handsX = 0;
@@ -1166,18 +1165,28 @@
       return Math.pow(Math.min(1, elapsedMs / RAMP_MS), RAMP_CURVE);
     }
 
+    // Kicks in only once the initial ramp has maxed out, then climbs slowly
+    // over LATE_RAMP_MS so long runs keep escalating instead of flatlining.
+    function lateRamp() {
+      if (elapsedMs <= RAMP_MS) return 0;
+      return Math.min(1, (elapsedMs - RAMP_MS) / LATE_RAMP_MS);
+    }
+
     function currentSpeed() {
-      return SPEED_START + ramp() * (SPEED_MAX - SPEED_START);
+      const base = SPEED_START + ramp() * (SPEED_MAX - SPEED_START);
+      return base + lateRamp() * (SPEED_LATE_MAX - SPEED_MAX);
     }
 
     function currentInterval() {
-      return INTERVAL_START - ramp() * (INTERVAL_START - INTERVAL_MIN);
+      const base = INTERVAL_START - ramp() * (INTERVAL_START - INTERVAL_MIN);
+      return base - lateRamp() * (INTERVAL_MIN - INTERVAL_LATE_MIN);
     }
 
     function currentCakeChance() {
       if (elapsedMs < CAKE_GRACE_MS) return 0;
       const d = Math.min(1, (elapsedMs - CAKE_GRACE_MS) / Math.max(1, RAMP_MS - CAKE_GRACE_MS));
-      return CAKE_CHANCE_START + d * (CAKE_CHANCE_MAX - CAKE_CHANCE_START);
+      const base = CAKE_CHANCE_START + d * (CAKE_CHANCE_MAX - CAKE_CHANCE_START);
+      return base + lateRamp() * (CAKE_CHANCE_LATE_MAX - CAKE_CHANCE_MAX);
     }
 
     // Minimum vertical spacing a new item needs behind the one ahead of it.
@@ -1256,8 +1265,12 @@
       });
     }
 
-    // Frosting splatter across the bouquet and out over the stage.
-    function splashCake(x, y) {
+    const CAKE_SPLAT_COLORS = ['#fdf6ec', '#f6dfe6', '#c48b98', '#ffffff', '#e8c9a0'];
+    const FLOWER_SPLAT_COLORS = ['#f6dfe6', '#c48b98', '#e8c9a0', '#b7c7a8', '#ffffff'];
+
+    // Shared impact effect for anything that hits the ground: a ripple flash,
+    // the item itself zooming up and fading, and a scatter of colored bits.
+    function splashImpact(x, y, emoji, colors) {
       const flash = document.createElement('div');
       flash.className = 'catch-flash';
       flash.style.setProperty('--fx', x + 'px');
@@ -1266,12 +1279,11 @@
 
       const smoosh = document.createElement('div');
       smoosh.className = 'catch-smoosh';
-      smoosh.textContent = CAKE_EMOJI;
+      smoosh.textContent = emoji;
       smoosh.style.left = x + 'px';
       smoosh.style.top = y + 'px';
       stage.appendChild(smoosh);
 
-      const SPLAT_COLORS = ['#fdf6ec', '#f6dfe6', '#c48b98', '#ffffff', '#e8c9a0'];
       for (let i = 0; i < 22; i++) {
         const splat = document.createElement('div');
         splat.className = 'catch-splat';
@@ -1280,7 +1292,7 @@
         splat.style.height = size * (0.6 + Math.random() * 0.5) + 'px';
         splat.style.left = x + 'px';
         splat.style.top = y + 'px';
-        splat.style.background = SPLAT_COLORS[Math.floor(Math.random() * SPLAT_COLORS.length)];
+        splat.style.background = colors[Math.floor(Math.random() * colors.length)];
         stage.appendChild(splat);
 
         const angle = Math.random() * Math.PI * 2;
@@ -1302,6 +1314,11 @@
       setTimeout(() => {
         stage.querySelectorAll('.catch-splat, .catch-flash, .catch-smoosh').forEach(el => el.remove());
       }, 1600);
+    }
+
+    // Frosting splatter across the bouquet and out over the stage.
+    function splashCake(x, y) {
+      splashImpact(x, y, CAKE_EMOJI, CAKE_SPLAT_COLORS);
     }
 
     function addToBouquet(index, emoji) {
@@ -1370,8 +1387,12 @@
         gameOverTitle.textContent = 'Flower dropped! 💔';
         finalScoreEl.textContent = `You caught ${flowerCount}`;
       }
-      // Cake splash needs a beat to play before the overlay covers it.
-      setTimeout(() => { gameOverOverlay.hidden = false; }, reason === 'cake' ? 850 : 0);
+      // He stays above the overlay so he — and the bouquet already in his
+      // hands — read at full brightness instead of dimmed behind it.
+      hands.classList.add('game-over');
+      // The cake splash / missed-flower highlight needs a beat to play
+      // before the overlay covers the stage.
+      setTimeout(() => { gameOverOverlay.hidden = false; }, 850);
       if (navigator.vibrate) navigator.vibrate(reason === 'cake' ? [70, 50, 70, 50, 140] : [40, 60, 40]);
     }
 
@@ -1460,6 +1481,11 @@
             continue;
           }
           if (pastZone) {
+            const missedEmoji = f.emoji;
+            f.resolved = true;
+            f.el.remove();
+            flowers.splice(i, 1);
+            splashImpact(f.x, f.y, missedEmoji, FLOWER_SPLAT_COLORS);
             endGame('miss');
             return;
           }
@@ -1487,14 +1513,17 @@
 
     function planWave() {
       const d = ramp();
+      const l = lateRamp();
       let cakes = 0;
       if (Math.random() < currentCakeChance()) {
         cakes = 1;
-        if (Math.random() < 0.25 + d * 0.5) cakes = 2;
-        if (cakes === 2 && d > 0.55 && Math.random() < (d - 0.55) * 1.1) cakes = 3;
+        if (Math.random() < 0.25 + d * 0.5 + l * 0.25) cakes = 2;
+        if (cakes === 2 && (d > 0.55 || l > 0) && Math.random() < Math.max(0, d - 0.55) * 1.1 + l * 0.55) cakes = 3;
+        // Only once the run is deep into the late ramp does a quadruple wall show up.
+        if (cakes === 3 && l > 0.6 && Math.random() < (l - 0.6) * 0.9) cakes = 4;
       }
       // With cakes present a flower often rides along, more often as it hardens.
-      const flower = cakes === 0 ? true : Math.random() < 0.35 + d * 0.45;
+      const flower = cakes === 0 ? true : Math.random() < 0.35 + d * 0.45 + l * 0.1;
       return { cakes, flower };
     }
 
@@ -1592,6 +1621,7 @@
       flowers = [];
       stage.querySelectorAll('.catch-splat, .catch-flash, .catch-smoosh').forEach(el => el.remove());
       bouquetDisplay.innerHTML = '';
+      hands.classList.remove('game-over');
       score = 0;
       elapsedMs = 0;
       lastFrameAt = 0;
