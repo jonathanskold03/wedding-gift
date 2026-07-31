@@ -504,6 +504,13 @@
     100% { transform: translateX(-50%) translateY(175%); }
   }
 
+  /* Resting state once she's off-frame — a plain (non-animating) hold of
+     brideExit's last frame. Switched to once the exit finishes so leaving and
+     re-entering the tab (a display:none/flex cycle) can't replay the toss. */
+  .catch-bride.done {
+    transform: translateX(-50%) translateY(175%);
+  }
+
   /* Held in front of her at the bottom centre, then thrown straight up. */
   .catch-toss {
     position: absolute;
@@ -534,6 +541,13 @@
     0% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0deg); }
     80% { opacity: 1; }
     100% { opacity: 0; transform: translate(-50%, -400px) scale(1.05) rotate(340deg); }
+  }
+
+  /* Resting state once it's thrown — a plain hold of bouquetToss's last
+     frame, for the same reason as .catch-bride.done above. */
+  .catch-toss.done {
+    opacity: 0;
+    transform: translate(-50%, -400px) scale(1.05) rotate(340deg);
   }
 
   /* The catcher sprite. His hands are cupped together above his head, so the
@@ -596,6 +610,39 @@
   .catch-bowtie::after {
     right: 0;
     clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  }
+
+  /* A little tear under his left eye (the eye on his own left side, so the
+     right side of the sprite as drawn), shown only on game over. Hidden by
+     default; .catch-hands.game-over reveals and animates it. */
+  /* One shape, not two glued together: a square with only its top-left
+     corner left sharp, rotated 45deg so that corner becomes a point at the
+     top while the rest reads as a single rounded drop. A top-to-bottom
+     gradient gives it a slight fade, like light catching a drop of water.
+     Scales up from its own center (default transform-origin) so the anchor
+     point below stays put — a plain small-to-full zoom, not a slide. */
+  .catch-tear {
+    position: absolute;
+    left: 56%;
+    top: 69%;
+    width: 5px;
+    height: 6px;
+    border-radius: 0 50% 50% 50%;
+    background: linear-gradient(to bottom, #9cd0f5 0%, #2f7fd6 55%, #1f5fa8 100%);
+    transform: translate(-50%, 0) rotate(45deg) scale(0.15);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .catch-hands.game-over .catch-tear {
+    animation: tearFall 0.6s ease-out forwards;
+  }
+
+  /* Grows in place — same anchor point throughout, no falling/sliding motion. */
+  @keyframes tearFall {
+    0% { opacity: 0; transform: translate(-50%, 0) rotate(45deg) scale(0.15); }
+    100% { opacity: 1; transform: translate(-50%, 0) rotate(45deg) scale(1); }
   }
 
   /* Hidden below the stage during the bride's intro, then popped up. */
@@ -764,21 +811,21 @@
       <div class="photo-hint">Swipe for photos →</div>
       <div class="photo-strip">
         <div class="photo-card tall"><img src="assets/photos/photo-01.jpg" width="1200" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card tall"><img src="assets/photos/photo-02.jpg" width="1114" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card tall"><img src="assets/photos/photo-03.jpg" width="900" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card tall"><img src="assets/photos/photo-04.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-05.jpg" width="1600" height="1200" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card tall"><img src="assets/photos/photo-06.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-07.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-08.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-09.jpg" width="1600" height="900" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card tall"><img src="assets/photos/photo-10.jpg" width="1202" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-11.jpg" width="1600" height="1202" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-02.jpg" width="1114" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-12.jpg" width="414" height="310" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-13.jpg" width="1600" height="1202" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-03.jpg" width="900" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-07.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-08.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-04.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-14.jpg" width="1600" height="1075" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-15.jpg" width="1600" height="1075" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-06.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
         <div class="photo-card"><img src="assets/photos/photo-16.jpg" width="1600" height="1200" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-09.jpg" width="1200" height="900" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-10.jpg" width="1202" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
       </div>
     </div>
 
@@ -799,6 +846,7 @@
         <div class="catch-hands pre-game" id="catch-hands">
           <img class="catch-catcher" src="assets/game/catcher.png" alt="" />
           <span class="catch-bowtie" aria-hidden="true"></span>
+          <span class="catch-tear" aria-hidden="true"></span>
           <div class="catch-bouquet-display" id="catch-bouquet-display"></div>
         </div>
         <div class="catch-overlay" id="catch-start-overlay">
@@ -1654,18 +1702,20 @@
     function playThrowAnimation(cb) {
       clearIntro();
 
-      bride.classList.remove('leaving', 'windup');
+      bride.classList.remove('leaving', 'windup', 'done');
       hands.classList.remove('popping');
       hands.classList.add('pre-game');
-      toss.classList.remove('tossing');
+      toss.classList.remove('tossing', 'done');
       void toss.offsetWidth;
       toss.classList.add('held');
 
-      const T_WINDUP = 900;   // she holds the bouquet for a beat first
-      const T_TOSS   = 1060;
-      const T_EXIT   = 1300;  // face drops out of frame
-      const T_HANDS  = 1620;  // hands pop up from the bottom
-      const T_PLAY   = 1980;  // flowers start falling
+      const T_WINDUP    = 900;   // she holds the bouquet for a beat first
+      const T_TOSS      = 1060;
+      const T_TOSS_DONE = T_TOSS + 960;  // bouquetToss animation length + a beat
+      const T_EXIT      = 1300;  // face drops out of frame
+      const T_EXIT_DONE = T_EXIT + 460;  // brideExit animation length + a beat
+      const T_HANDS     = 1620;  // hands pop up from the bottom
+      const T_PLAY      = 1980;  // flowers start falling
 
       const at = (ms, fn) => introTimers.push(setTimeout(fn, ms));
 
@@ -1677,6 +1727,12 @@
         toss.classList.add('tossing');
       });
       at(T_EXIT, () => bride.classList.add('leaving'));
+      // Swap the finished animations for a plain static "done" state — a
+      // class with a running/completed CSS animation replays it from the top
+      // if the tab is hidden and shown again (display:none resets it), which
+      // looked like the bouquet getting thrown a second time in the background.
+      at(T_TOSS_DONE, () => { toss.classList.remove('tossing'); toss.classList.add('done'); });
+      at(T_EXIT_DONE, () => { bride.classList.remove('leaving'); bride.classList.add('done'); });
       at(T_HANDS, () => {
         hands.classList.remove('pre-game');
         hands.classList.add('popping');
