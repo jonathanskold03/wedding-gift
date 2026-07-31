@@ -56,13 +56,33 @@
     display: flex;
     flex-direction: column;
     padding: max(0.9rem, env(safe-area-inset-top)) 1.1rem max(0.6rem, env(safe-area-inset-bottom));
-    opacity: 0;
-    animation: reveal 0.9s ease-out 0.3s forwards;
   }
 
-  @keyframes reveal {
-    to { opacity: 1; }
+  /* First-load reveal: header, message, and button cascade in one after
+     another instead of popping in all at once. Scoped to body:not(.loaded)
+     so it only ever plays once — a display:none/flex toggle (switching tabs
+     away from and back to home) restarts CSS animations from scratch, and
+     without this scoping the cascade would replay every time. JS adds
+     .loaded to body once the cascade finishes the first time. */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
   }
+
+  body:not(.loaded) .date,
+  body:not(.loaded) h1,
+  body:not(.loaded) .counter,
+  body:not(.loaded) .message,
+  body:not(.loaded) #toast-btn {
+    opacity: 0;
+    animation: fadeUp 0.7s ease-out forwards;
+  }
+
+  body:not(.loaded) .date { animation-delay: 0.15s; }
+  body:not(.loaded) h1 { animation-delay: 0.28s; }
+  body:not(.loaded) .counter { animation-delay: 0.42s; }
+  body:not(.loaded) .message { animation-delay: 0.6s; }
+  body:not(.loaded) #toast-btn { animation-delay: 0.78s; }
 
   .app-header {
     flex-shrink: 0;
@@ -95,14 +115,6 @@
     letter-spacing: 0.03em;
     color: rgba(253, 246, 236, 0.85);
     margin-top: 0.25rem;
-  }
-
-  .divider {
-    width: 46px;
-    height: 1px;
-    background: var(--sage-light);
-    margin: 0.45rem auto;
-    opacity: 0.7;
   }
 
   .music-btn {
@@ -164,6 +176,12 @@
     justify-content: flex-start;
   }
 
+  /* The corner blooms are decorative bleed by design — clip rather than
+     scroll so their rotated edges never trigger a scrollbar. */
+  #tab-home {
+    overflow: hidden;
+  }
+
   .message {
     font-size: 1rem;
     line-height: 1.55;
@@ -205,6 +223,29 @@
 
   .cheers.show {
     opacity: 1;
+  }
+
+  /* Big, faint, tucked into the corners behind the content — ambient
+     texture rather than something meant to be looked at directly. */
+  .home-bloom {
+    position: absolute;
+    font-size: 5.5rem;
+    opacity: 0.09;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .home-bloom--tl {
+    top: 0.25rem;
+    left: 0.25rem;
+    transform: rotate(-18deg);
+  }
+
+  .home-bloom--br {
+    bottom: 0.25rem;
+    right: 0.25rem;
+    transform: rotate(16deg);
   }
 
   .photo-hint {
@@ -684,10 +725,16 @@
   }
 
   .catch-score {
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 4;
+    font-size: 0.8rem;
     color: rgba(253, 246, 236, 0.9);
-    flex-shrink: 0;
+    background: rgba(253, 246, 236, 0.14);
+    border: 1px solid rgba(253, 246, 236, 0.45);
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
   }
 </style>
 </head>
@@ -703,18 +750,19 @@
     <div class="date">01 August 2026</div>
     <h1>Angelika <span class="amp">&amp;</span> Stanislaw</h1>
     <div class="counter" id="married-counter"></div>
-    <div class="divider"></div>
   </div>
 
   <div class="app-content">
     <div class="tab-panel active" id="tab-home">
+      <span class="home-bloom home-bloom--tl" aria-hidden="true">🌸</span>
+      <span class="home-bloom home-bloom--br" aria-hidden="true">🌿</span>
       <p class="message">
         Placeholder message — swap this out for your real toast!
         Congratulations on finding each other. Here's to a lifetime of
         good wine, better laughs, and the best kind of trouble.
       </p>
-      <button class="toast-btn" id="toast-btn">Raise a Glass 🥂</button>
-      <div class="cheers" id="cheers">Cheers to Angelika & Stanislaw! 🍷</div>
+      <button class="toast-btn" id="toast-btn">🥂 Cheers 🥂</button>
+      <div class="cheers" id="cheers">🍷 To Angelika & Stanislaw! 🍷</div>
     </div>
 
     <div class="tab-panel" id="tab-photos">
@@ -741,6 +789,7 @@
 
     <div class="tab-panel" id="tab-catch">
       <div class="catch-stage" id="catch-stage">
+        <div class="catch-score" id="catch-score">🌸 x0</div>
         <div class="catch-bride" id="catch-bride">
           <span class="catch-veil" aria-hidden="true"></span>
           <img class="catch-bride-face" src="assets/game/bride-head.png" alt="" />
@@ -763,7 +812,6 @@
           <button class="toast-btn" id="catch-restart-btn">Try Again</button>
         </div>
       </div>
-      <div class="catch-score" id="catch-score">🌸 Caught: 0</div>
     </div>
   </div>
 
@@ -784,6 +832,10 @@
 </div>
 
 <script>
+  // Marks the first-load cascade (see body:not(.loaded) rules above) as done
+  // so it never replays when switching back to the home tab later.
+  setTimeout(() => document.body.classList.add('loaded'), 1600);
+
   // Pin the app to the actually-visible viewport height. iOS Safari before
   // 15.4 has no dvh and its vh is the toolbar-hidden viewport, so the layout
   // ends up taller than the screen and the bottom gets cut off.
@@ -855,7 +907,7 @@
     });
   })();
 
-  // Confetti burst on load
+  // Confetti burst from the Cheers button
   (function () {
     const canvas = document.getElementById('confetti-canvas');
     const ctx = canvas.getContext('2d');
@@ -870,11 +922,13 @@
 
     const colors = ['#c48b98', '#fdf6ec', '#7e9470', '#34432b', '#ffffff'];
 
-    function spawnConfetti(count) {
+    function spawnConfetti(count, origin) {
+      const originX = origin ? origin.x : canvas.width / 2;
+      const originY = origin ? origin.y : canvas.height * 0.35;
       for (let i = 0; i < count; i++) {
         particles.push({
-          x: canvas.width / 2 + (Math.random() - 0.5) * 60,
-          y: canvas.height * 0.35,
+          x: originX + (Math.random() - 0.5) * 60,
+          y: originY,
           vx: (Math.random() - 0.5) * 9,
           vy: Math.random() * -9 - 3,
           size: Math.random() * 7 + 4,
@@ -911,11 +965,11 @@
       requestAnimationFrame(tick);
     }
 
-    window.addEventListener('load', () => spawnConfetti(140));
     tick();
 
-    document.getElementById('toast-btn').addEventListener('click', () => {
-      spawnConfetti(90);
+    document.getElementById('toast-btn').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      spawnConfetti(90, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
       const cheers = document.getElementById('cheers');
       cheers.classList.add('show');
 
@@ -1264,7 +1318,7 @@
     }
 
     function updateScore() {
-      scoreEl.textContent = `🌸 Caught: ${score}`;
+      scoreEl.textContent = `🌸 x${score}`;
     }
 
     function endGame(reason) {
