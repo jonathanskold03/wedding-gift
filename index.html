@@ -157,9 +157,10 @@
   }
 
   /* Centring a flex column pushes any overflow out of BOTH ends, where it can't
-     be scrolled to. The game stage flexes to fit, so start-align it instead —
-     that way if space is ever too tight it clips nothing and scrolls normally. */
-  #tab-catch {
+     be scrolled to. The game stage and photo collage both flex to fit, so
+     start-align them instead — that way if space is ever too tight nothing
+     clips, it just scrolls normally. */
+  #tab-catch, #tab-photos {
     justify-content: flex-start;
   }
 
@@ -215,45 +216,55 @@
     flex-shrink: 0;
   }
 
+  /* Two rows tall, packed densely: a portrait spans both rows, and two
+     landscape shots stack to fill that same column-height alongside it —
+     a puzzle-like mosaic instead of one uniform row. Still one long scroll
+     if it runs wider than the screen, same as the old filmstrip. */
   .photo-strip {
-    display: flex;
-    gap: 0.8rem;
+    display: grid;
+    grid-auto-flow: column dense;
+    grid-template-rows: repeat(2, 1fr);
+    grid-auto-columns: min-content;
+    gap: 0.5rem;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     padding: 0.25rem 0.6rem 0.6rem;
     width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     scrollbar-width: none;
-    flex-shrink: 0;
   }
 
   .photo-strip::-webkit-scrollbar {
     display: none;
   }
 
+  /* Sized to each photo's own aspect ratio rather than a fixed box, so
+     portrait and landscape shots pack together uncropped instead of being
+     force-cropped into identical cards. */
   .photo-card {
     scroll-snap-align: center;
-    flex: 0 0 auto;
-    width: 42vw;
-    max-width: 150px;
-    aspect-ratio: 3 / 4;
+    height: 100%;
     border-radius: 10px;
     background: rgba(253, 246, 236, 0.14);
     border: 1px solid rgba(253, 246, 236, 0.45);
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    color: rgba(253, 246, 236, 0.7);
-    overflow: hidden;
+  }
+
+  /* Portrait shots span both rows so a landscape can sit above or below
+     another landscape alongside it, matching the portrait's full height. */
+  .photo-card.tall {
+    grid-row: span 2;
   }
 
   .photo-card img {
-    width: 100%;
     height: 100%;
-    object-fit: cover;
+    width: auto;
     display: block;
   }
 
@@ -752,22 +763,22 @@
     <div class="tab-panel" id="tab-photos">
       <div class="photo-hint">Swipe for photos →</div>
       <div class="photo-strip">
-        <div class="photo-card"><img src="assets/photos/photo-01.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-02.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-03.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-04.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-05.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-06.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-07.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-08.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-09.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-10.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-11.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-12.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-13.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-14.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-15.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
-        <div class="photo-card"><img src="assets/photos/photo-16.jpg" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-01.jpg" width="1200" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-02.jpg" width="1114" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-03.jpg" width="900" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-04.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-05.jpg" width="1600" height="1200" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-06.jpg" width="901" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-07.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-08.jpg" width="1600" height="901" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-09.jpg" width="1600" height="900" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card tall"><img src="assets/photos/photo-10.jpg" width="1202" height="1600" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-11.jpg" width="1600" height="1202" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-12.jpg" width="414" height="310" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-13.jpg" width="1600" height="1202" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-14.jpg" width="1600" height="1075" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-15.jpg" width="1600" height="1075" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
+        <div class="photo-card"><img src="assets/photos/photo-16.jpg" width="1600" height="1200" alt="Angelika &amp; Stanislaw" loading="lazy" decoding="async" /></div>
       </div>
     </div>
 
@@ -792,11 +803,11 @@
         </div>
         <div class="catch-overlay" id="catch-start-overlay">
           <div class="catch-overlay-title">Catch the bouquet!</div>
-          <div class="catch-overlay-sub">Catch the falling flowers 🌸 but dodge the cake! 🍰</div>
+          <div class="catch-overlay-sub">Catch the falling flowers 🌸<br>Dodge the cake! 🍰</div>
           <button class="toast-btn" id="catch-start-btn">Start</button>
         </div>
         <div class="catch-overlay" id="catch-gameover-overlay" hidden>
-          <div class="catch-overlay-title" id="catch-gameover-title">Bouquet Dropped! 💔</div>
+          <div class="catch-overlay-title" id="catch-gameover-title">Bouquet Dropped!</div>
           <div class="catch-overlay-sub" id="catch-final-score">You caught 0 flowers</div>
           <button class="toast-btn" id="catch-restart-btn">Try Again</button>
         </div>
@@ -1381,10 +1392,10 @@
       if (rafId) cancelAnimationFrame(rafId);
       const flowerCount = score === 1 ? '1 flower' : `${score} flowers`;
       if (reason === 'cake') {
-        gameOverTitle.textContent = 'Caked! 🍰';
+        gameOverTitle.textContent = '🍰 Caked! 🍰';
         finalScoreEl.textContent = `You caught ${flowerCount}`;
       } else {
-        gameOverTitle.textContent = 'Flower dropped! 💔';
+        gameOverTitle.textContent = '🌸 Flower dropped! 🌸';
         finalScoreEl.textContent = `You caught ${flowerCount}`;
       }
       // He stays above the overlay so he — and the bouquet already in his
