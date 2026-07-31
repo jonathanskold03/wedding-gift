@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="color-scheme" content="only light" />
+<meta name="theme-color" content="#34432b" />
 <title>Angelika & Stanislaw</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -162,10 +163,38 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0.25rem 0.1rem;
+    opacity: 1;
+    transform: translateX(0);
   }
 
   .tab-panel.active {
     display: flex;
+  }
+
+  /* Tab switch: the outgoing panel slides/fades out while the incoming one
+     slides/fades in over it, direction set by JS based on nav order. Both
+     panels are display:flex briefly during the overlap (JS keeps .active on
+     the outgoing one for the animation's duration before reverting it to
+     display:none as usual). */
+  @keyframes tabSlideIn {
+    from { opacity: 0; transform: translateX(var(--tab-slide, 26px)); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes tabSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(calc(var(--tab-slide, 26px) * -1)); }
+  }
+
+  .tab-panel.tab-slide-in {
+    animation: tabSlideIn 0.32s ease forwards;
+    z-index: 2;
+  }
+
+  .tab-panel.tab-slide-out {
+    animation: tabSlideOut 0.32s ease forwards;
+    z-index: 1;
+    pointer-events: none;
   }
 
   /* Centring a flex column pushes any overflow out of BOTH ends, where it can't
@@ -218,7 +247,7 @@
     color: var(--blush);
     min-height: 1.4em;
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.8s ease;
   }
 
   .cheers.show {
@@ -736,6 +765,11 @@
     border-radius: 999px;
     padding: 0.25rem 0.6rem;
   }
+
+  .catch-best {
+    left: auto;
+    right: 0.6rem;
+  }
 </style>
 </head>
 <body>
@@ -790,6 +824,7 @@
     <div class="tab-panel" id="tab-catch">
       <div class="catch-stage" id="catch-stage">
         <div class="catch-score" id="catch-score">🌸 x0</div>
+        <div class="catch-score catch-best" id="catch-best">🏆 0</div>
         <div class="catch-bride" id="catch-bride">
           <span class="catch-veil" aria-hidden="true"></span>
           <img class="catch-bride-face" src="assets/game/bride-head.png" alt="" />
@@ -817,8 +852,8 @@
 
   <div class="app-nav">
     <button class="nav-btn active" data-tab="tab-home">
-      <span class="nav-icon">🏠</span>
-      <span>Home</span>
+      <span class="nav-icon">🥂</span>
+      <span>Toast</span>
     </button>
     <button class="nav-btn" data-tab="tab-photos">
       <span class="nav-icon">📷</span>
@@ -884,25 +919,46 @@
     }
   })();
 
-  // Tab navigation
+  // Tab navigation. Panels slide/crossfade past each other instead of
+  // instantly swapping — direction follows the tabs' left-to-right order, so
+  // moving to a later tab slides content in from the right and back slides
+  // in from the left, like paging through a book.
   (function () {
+    const TAB_ORDER = ['tab-home', 'tab-photos', 'tab-catch'];
+    const SLIDE_MS = 320;
     const navBtns = document.querySelectorAll('.nav-btn');
-    const panels = document.querySelectorAll('.tab-panel');
+    let switching = false;
 
     navBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        const targetId = btn.dataset.tab;
+        const target = document.getElementById(targetId);
+        const current = document.querySelector('.tab-panel.active');
+        if (switching || target === current) return;
+        switching = true;
+
+        const dir = TAB_ORDER.indexOf(targetId) > TAB_ORDER.indexOf(current.id) ? 1 : -1;
+        current.style.setProperty('--tab-slide', `${26 * dir}px`);
+        target.style.setProperty('--tab-slide', `${26 * dir}px`);
+
         navBtns.forEach(b => b.classList.remove('active'));
-        panels.forEach(p => p.classList.remove('active'));
-
         btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
 
-        if (btn.dataset.tab === 'tab-catch') {
+        target.classList.add('active', 'tab-slide-in');
+        current.classList.add('tab-slide-out');
+
+        if (targetId === 'tab-catch') {
           if (typeof window.initCatchGameOnce === 'function') window.initCatchGameOnce();
           if (typeof window.catchGameResume === 'function') window.catchGameResume();
         } else if (typeof window.catchGamePause === 'function') {
           window.catchGamePause();
         }
+
+        setTimeout(() => {
+          current.classList.remove('active', 'tab-slide-out');
+          target.classList.remove('tab-slide-in');
+          switching = false;
+        }, SLIDE_MS);
       });
     });
   })();
@@ -967,11 +1023,16 @@
 
     tick();
 
+    const cheers = document.getElementById('cheers');
+    let cheersHideTimer = null;
+
     document.getElementById('toast-btn').addEventListener('click', (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
       spawnConfetti(90, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-      const cheers = document.getElementById('cheers');
       cheers.classList.add('show');
+
+      clearTimeout(cheersHideTimer);
+      cheersHideTimer = setTimeout(() => cheers.classList.remove('show'), 2500);
 
       if (navigator.vibrate) {
         navigator.vibrate([25, 40, 25, 40, 90]); // little clink-clink, then a cheers buzz
@@ -999,7 +1060,7 @@
       const hours = Math.floor((total % 86400000) / 3600000);
       const mins = Math.floor((total % 3600000) / 60000);
 
-      el.textContent = `💍 Married for ${sign}${days}d ${pad(hours)}h ${pad(mins)}m`;
+      el.textContent = `💍 Married for ${sign}${days}d ${pad(hours)}h ${pad(mins)}m 💍`;
     }
 
     update();
@@ -1044,6 +1105,20 @@
     const finalScoreEl = document.getElementById('catch-final-score');
     const gameOverTitle = document.getElementById('catch-gameover-title');
     const scoreEl = document.getElementById('catch-score');
+    const bestEl = document.getElementById('catch-best');
+
+    const BEST_SCORE_KEY = 'weddingCatchBestScore';
+    function readBestScore() {
+      try { return Number(localStorage.getItem(BEST_SCORE_KEY)) || 0; } catch { return 0; }
+    }
+    function writeBestScore(value) {
+      try { localStorage.setItem(BEST_SCORE_KEY, String(value)); } catch {}
+    }
+    let bestScore = readBestScore();
+    function updateBestDisplay() {
+      bestEl.textContent = `🏆 ${bestScore}`;
+    }
+    updateBestDisplay();
 
     const FLOWER_EMOJIS = ['🌷', '🌺', '🌼', '🌻', '🌹', '🪻'];
     const CAKE_EMOJI = '🍰';
@@ -1326,12 +1401,19 @@
       clearTimeout(spawnTimer);
       if (rafId) cancelAnimationFrame(rafId);
       const flowerCount = score === 1 ? '1 flower' : `${score} flowers`;
+      const isNewBest = score > 0 && score > bestScore;
+      if (isNewBest) {
+        bestScore = score;
+        writeBestScore(bestScore);
+        updateBestDisplay();
+      }
+      const scoreLine = `You caught ${flowerCount}${isNewBest ? ' — new best! 🎉' : ''}`;
       if (reason === 'cake') {
         gameOverTitle.textContent = '🍰 Caked! 🍰';
-        finalScoreEl.textContent = `You caught ${flowerCount}`;
+        finalScoreEl.textContent = scoreLine;
       } else {
         gameOverTitle.textContent = '🌸 Flower dropped! 🌸';
-        finalScoreEl.textContent = `You caught ${flowerCount}`;
+        finalScoreEl.textContent = scoreLine;
       }
       // He stays above the overlay so he — and the bouquet already in his
       // hands — read at full brightness instead of dimmed behind it.
