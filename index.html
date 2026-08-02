@@ -118,33 +118,6 @@
     margin-top: 0.25rem;
   }
 
-  .music-btn {
-    position: fixed;
-    top: max(0.9rem, env(safe-area-inset-top));
-    right: 1rem;
-    z-index: 7;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--blush);
-    background: rgba(253, 246, 236, 0.95);
-    color: var(--blush);
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  }
-
-  .music-btn.playing {
-    animation: spin 3s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
   /* Tab content area */
   .app-content {
     flex: 1;
@@ -855,14 +828,26 @@
 
   /* Two lookout cutouts (matching the bride/groom art style) instead of an
      emoji: one above peeking down, one below peeking up. Each independently
-     flips between its "back" (safe) and "look" (watching) photo. */
+     flips between its "back" (safe) and "look" (watching) photo, framed in
+     a circular badge whose ring turns red while it's actively watching. */
   .kiss-chaperone {
     position: absolute;
     left: 50%;
-    height: 64px;
-    width: auto;
+    width: 76px;
+    height: 76px;
+    box-sizing: border-box;
+    padding: 4px;
+    border-radius: 50%;
+    background-color: rgba(253, 246, 236, 0.15);
+    background-repeat: no-repeat;
+    /* Image paints only inside the padding, so the 4px ring around it always
+       shows the plain badge color — same margin for both, independent of
+       each photo's own zoom/pan below. */
+    background-origin: content-box;
+    background-clip: content-box;
+    border: 2px solid rgba(253, 246, 236, 0.6);
     transform: translate(-50%, -50%);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
     z-index: 3;
     pointer-events: none;
     user-select: none;
@@ -872,19 +857,39 @@
 
   .kiss-chaperone--top {
     top: 15%;
+    /* Zoomed out a bit further — his face was filling the whole badge. */
+    background-size: 78% auto;
+    background-position: 50% 22%;
   }
 
   .kiss-chaperone--bottom {
-    top: 85%;
+    top: 93%;
+    background-size: 100% auto;
+    /* Lower (toward 0%) reveals more of the top of her head. */
+    background-position: 50% 4%;
+  }
+
+  /* His turned-away shot specifically: a bit more zoomed in and shifted up. */
+  .kiss-chaperone--top:not(.watching) {
+    background-size: 90% auto;
+    background-position: 50% 12%;
+  }
+
+  /* Her looking-at-us shot specifically: same treatment. */
+  .kiss-chaperone--bottom.watching {
+    background-size: 115% auto;
+    background-position: 50% 0%;
   }
 
   .kiss-chaperone.watching {
     transform: translate(-50%, -50%) scale(1.15);
+    border-color: rgba(220, 60, 60, 0.9);
+    background-color: rgba(220, 60, 60, 0.2);
   }
 
   .kiss-spark {
     position: absolute;
-    top: 54%;
+    top: 35%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.6);
     z-index: 5;
@@ -917,7 +922,7 @@
 
   .kiss-heart {
     position: absolute;
-    top: 54%;
+    top: 35%;
     left: 50%;
     z-index: 5;
     font-size: var(--heart-size, 1rem);
@@ -925,14 +930,15 @@
     animation: kissHeartFloat var(--heart-life, 1.1s) ease-out forwards;
   }
 
-  /* Cutout portrait shots, cropped to content and pre-flipped so the two
-     face each other across the middle. Anchored by top edge (not center) so
-     the bride's taller veil can extend further down while both heads still
-     line up at the same height. */
+  /* Full-body cutouts, cropped to content and already shot facing the right
+     way for each side. Both stand on the same floor (bottom-anchored) at
+     the same height rather than being centered/top-aligned like the old
+     head-only crops. */
   .kiss-character {
     position: absolute;
-    top: calc(55% - 50px);
+    bottom: 18%;
     width: auto;
+    height: 300px;
     transform: translateX(-50%);
     transition: left 0.35s ease;
     z-index: 2;
@@ -944,36 +950,32 @@
 
   .kiss-character--groom {
     left: 14%;
-    height: 100px;
-    /* Nudged up a bit so his mouth lines up with hers at the kiss point. */
-    margin-top: -10px;
+    /* Same nudge at rest and held so there's no vertical jump between them. */
+    bottom: calc(18% + 4px);
   }
 
   .kiss-character--bride {
     left: 86%;
-    /* 30% taller for the veil's added height, top-aligned with the groom. */
-    height: 130px;
+    /* Same nudge at rest and held so there's no vertical jump between them. */
+    bottom: calc(18% - 5px);
   }
 
   /* Held (kissing) positions: centers placed so the two images' facing
      edges just meet at the stage's midline, based on each one's fixed
-     rendered width (40px/67px half-widths at their current heights above —
-     re-measure both if the character heights change). */
+     rendered width at the height above — re-measure both if the character
+     heights change. */
   .kiss-character--groom.held {
-    left: calc(50% - 30px);
+    left: calc(50% - 62px);
   }
 
   .kiss-character--bride.held {
-    left: calc(50% + 67px);
+    left: calc(50% + 55px);
   }
 </style>
 </head>
 <body>
 
 <canvas id="confetti-canvas"></canvas>
-
-<audio id="bg-audio" src="assets/song.mp3" loop preload="none"></audio>
-<button class="music-btn" id="music-toggle" aria-label="Toggle background music" title="Add your song at assets/song.mp3">🎵</button>
 
 <div class="app">
   <div class="app-header">
@@ -1060,13 +1062,13 @@
         <div class="kiss-score" id="kiss-score-left">0.0s</div>
         <div class="kiss-score kiss-score--right" id="kiss-score-right">0.0s</div>
         <div class="kiss-round-timer" id="kiss-round-timer">20s</div>
-        <img class="kiss-chaperone kiss-chaperone--top" id="kiss-chaperone-top" src="assets/game/jonte-back.png" alt="" />
-        <img class="kiss-chaperone kiss-chaperone--bottom" id="kiss-chaperone-bottom" src="assets/game/vera-back.png" alt="" />
+        <div class="kiss-chaperone kiss-chaperone--top" id="kiss-chaperone-top"></div>
+        <div class="kiss-chaperone kiss-chaperone--bottom" id="kiss-chaperone-bottom"></div>
         <span class="kiss-spark" id="kiss-spark">💕</span>
-        <img class="kiss-character kiss-character--groom" id="kiss-groom" src="assets/game/groom-kiss.png" alt="" />
-        <img class="kiss-character kiss-character--bride" id="kiss-bride" src="assets/game/bride-kiss.png" alt="" />
+        <img class="kiss-character kiss-character--groom" id="kiss-groom" src="assets/game/groom-kiss-new.png" alt="" />
+        <img class="kiss-character kiss-character--bride" id="kiss-bride" src="assets/game/bride-kiss-new.png" alt="" />
         <div class="catch-overlay" id="kiss-start-overlay">
-          <div class="catch-overlay-title">Kiss 💋</div>
+          <div class="catch-overlay-title">Kiss the bride!</div>
           <div class="catch-overlay-sub">Hold your side of the screen to kiss 💋, but only when Vera &amp; Jonte aren't watching! 👀</div>
           <button class="toast-btn" id="kiss-start-btn">Start</button>
         </div>
@@ -1284,7 +1286,7 @@
 
   // "Married for" / countdown ticker
   (function () {
-    const target = new Date('2026-08-01T16:00:00');
+    const target = new Date('2026-08-01T16:08:00');
     const el = document.getElementById('married-counter');
 
     function pad(n) {
@@ -1305,30 +1307,6 @@
 
     update();
     setInterval(update, 60000);
-  })();
-
-  // Background music toggle (drop your own file at assets/song.mp3)
-  (function () {
-    const audio = document.getElementById('bg-audio');
-    const btn = document.getElementById('music-toggle');
-
-    btn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play()
-          .then(() => {
-            btn.classList.add('playing');
-            btn.textContent = '🎶';
-          })
-          .catch(() => {
-            btn.textContent = '⚠️';
-            btn.title = 'Add a song file at assets/song.mp3 to enable music';
-          });
-      } else {
-        audio.pause();
-        btn.classList.remove('playing');
-        btn.textContent = '🎵';
-      }
-    });
   })();
 
   // Catch the Bouquet mini-game
@@ -2033,8 +2011,14 @@
     // Getting caught drains score faster than safe holding builds it, so a
     // careless press during a watching phase is a real cost, not a wash.
     const PENALTY_RATE = 2;
-    const AWAY_MIN_MS = 1300, AWAY_MAX_MS = 2600;
-    const WATCH_MIN_MS = 800, WATCH_MAX_MS = 1500;
+    const AWAY_MIN_MS = 1400, AWAY_MAX_MS = 2600;
+    // Shorter watch windows than before — they look less often, and for less
+    // time each time, so there's more real breathing room between checks.
+    const WATCH_MIN_MS = 600, WATCH_MAX_MS = 1000;
+    // Both lookouts flip on the same shared beat below, each landing within
+    // this many ms of it — independent enough to not feel identical, but
+    // never able to drift out of sync with each other over a long round.
+    const CHAPERONE_JITTER_MS = 220;
 
     let leftHeld = false, rightHeld = false;
     let leftScore = 0, rightScore = 0;
@@ -2117,49 +2101,85 @@
       if (e.key === 'l' || e.key === 'L') rightHeld = false;
     });
 
-    // Factory for a single lookout: flips between its "back" (safe) and
-    // "look" (watching) photo on a random schedule. Two independent
-    // instances run at once (above and below), each capable of catching
-    // either side — getting caught by either one costs the same penalty.
-    function makeChaperone(imgEl, lookSrc, backSrc) {
+    // Renderer for a single lookout: just holds its watching/back state and
+    // reflects it in the DOM. Timing lives in the shared conductor below —
+    // this only reacts when told to.
+    function makeChaperoneRenderer(imgEl, lookSrc, backSrc) {
       let watching = false;
-      let timer = null;
+      imgEl.style.backgroundImage = `url('${backSrc}')`;
 
-      function schedule() {
-        const duration = watching ? randRange(WATCH_MIN_MS, WATCH_MAX_MS) : randRange(AWAY_MIN_MS, AWAY_MAX_MS);
-        timer = setTimeout(() => {
-          if (!playing || paused) return;
-          watching = !watching;
-          imgEl.classList.toggle('watching', watching);
-          imgEl.src = watching ? lookSrc : backSrc;
-          // A caught-in-the-act buzz right as she turns — the actual score
-          // penalty is continuous for as long as they keep holding into it.
-          if (watching && (leftHeld || rightHeld) && navigator.vibrate) {
-            navigator.vibrate([60, 40, 60]);
-          }
-          schedule();
-        }, duration);
-      }
-
-      function stop() {
-        clearTimeout(timer);
+      function setWatching(next) {
+        if (watching === next) return;
+        watching = next;
+        imgEl.classList.toggle('watching', watching);
+        imgEl.style.backgroundImage = `url('${watching ? lookSrc : backSrc}')`;
       }
 
       function reset() {
-        stop();
         watching = false;
         imgEl.classList.remove('watching');
-        imgEl.src = backSrc;
+        imgEl.style.backgroundImage = `url('${backSrc}')`;
       }
 
       return {
         get watching() { return watching; },
-        schedule, stop, reset,
+        setWatching, reset,
       };
     }
 
-    const jonteChaperone = makeChaperone(chaperoneTopImg, 'assets/game/jonte-look.png', 'assets/game/jonte-back.png');
-    const veraChaperone = makeChaperone(chaperoneBottomImg, 'assets/game/vera-look.png', 'assets/game/vera-back.png');
+    const jonteChaperone = makeChaperoneRenderer(chaperoneTopImg, 'assets/game/jonte-look.png', 'assets/game/jonte-back.png');
+    const veraChaperone = makeChaperoneRenderer(chaperoneBottomImg, 'assets/game/vera-look.png', 'assets/game/vera-back.png');
+
+    // Shared conductor: one random away/watch beat drives both lookouts.
+    // Each one flips within CHAPERONE_JITTER_MS of that beat (its own
+    // independent random delay), so they still read as two separate
+    // lookouts without ever drifting far apart from each other.
+    let sharedWatching = false;
+    let sharedTimer = null;
+    let jonteFlipTimer = null;
+    let veraFlipTimer = null;
+
+    function scheduleShared() {
+      const duration = sharedWatching ? randRange(WATCH_MIN_MS, WATCH_MAX_MS) : randRange(AWAY_MIN_MS, AWAY_MAX_MS);
+      sharedTimer = setTimeout(() => {
+        if (!playing || paused) return;
+        sharedWatching = !sharedWatching;
+
+        // On a watch beat, not always both — sometimes just one of them
+        // actually looks over. Away always relaxes both, no exceptions.
+        let jonteWatches = sharedWatching;
+        let veraWatches = sharedWatching;
+        if (sharedWatching) {
+          const pick = Math.random();
+          if (pick < 1 / 3) veraWatches = false;
+          else if (pick < 2 / 3) jonteWatches = false;
+        }
+
+        if ((jonteWatches || veraWatches) && (leftHeld || rightHeld) && navigator.vibrate) {
+          navigator.vibrate([60, 40, 60]);
+        }
+
+        clearTimeout(jonteFlipTimer);
+        clearTimeout(veraFlipTimer);
+        jonteFlipTimer = setTimeout(() => jonteChaperone.setWatching(jonteWatches), randRange(0, CHAPERONE_JITTER_MS));
+        veraFlipTimer = setTimeout(() => veraChaperone.setWatching(veraWatches), randRange(0, CHAPERONE_JITTER_MS));
+
+        scheduleShared();
+      }, duration);
+    }
+
+    function stopShared() {
+      clearTimeout(sharedTimer);
+      clearTimeout(jonteFlipTimer);
+      clearTimeout(veraFlipTimer);
+    }
+
+    function resetShared() {
+      stopShared();
+      sharedWatching = false;
+      jonteChaperone.reset();
+      veraChaperone.reset();
+    }
 
     function updateScoreDisplay() {
       leftScoreEl.textContent = `${leftScore.toFixed(1)}s`;
@@ -2168,8 +2188,7 @@
 
     function endGame() {
       playing = false;
-      jonteChaperone.stop();
-      veraChaperone.stop();
+      stopShared();
       if (rafId) cancelAnimationFrame(rafId);
       groom.classList.remove('held');
       bride.classList.remove('held');
@@ -2232,6 +2251,10 @@
     }
 
     function startGame() {
+      // Guards against a double-tapped Start/Play Again leaking a second
+      // concurrent gameLoop chain, which would double-decrement roundRemaining.
+      if (rafId) cancelAnimationFrame(rafId);
+
       leftScore = 0;
       rightScore = 0;
       leftHeld = false;
@@ -2239,8 +2262,7 @@
       activePointers.clear();
       roundRemaining = ROUND_MS;
       lastFrameAt = 0;
-      jonteChaperone.reset();
-      veraChaperone.reset();
+      resetShared();
       groom.classList.remove('held');
       bride.classList.remove('held');
       stage.classList.remove('kissing');
@@ -2256,8 +2278,7 @@
       playing = true;
       paused = false;
 
-      jonteChaperone.schedule();
-      veraChaperone.schedule();
+      scheduleShared();
       rafId = requestAnimationFrame(gameLoop);
     }
 
@@ -2267,6 +2288,7 @@
     window.initKissGameOnce = function () {
       if (initialized) return;
       initialized = true;
+      resetShared();
       updateScoreDisplay();
     };
 
@@ -2276,8 +2298,7 @@
       leftHeld = false;
       rightHeld = false;
       activePointers.clear();
-      jonteChaperone.stop();
-      veraChaperone.stop();
+      stopShared();
       if (rafId) cancelAnimationFrame(rafId);
     };
 
@@ -2285,8 +2306,7 @@
       if (!playing || !paused) return;
       paused = false;
       lastFrameAt = 0;
-      jonteChaperone.schedule();
-      veraChaperone.schedule();
+      scheduleShared();
       rafId = requestAnimationFrame(gameLoop);
     };
   })();
