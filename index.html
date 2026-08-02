@@ -838,7 +838,9 @@
     box-sizing: border-box;
     padding: 4px;
     border-radius: 50%;
-    background-color: rgba(253, 246, 236, 0.15);
+    /* Opaque enough that a character overlapping behind on a short screen
+       never bleeds through the ring or the photo's own transparent edges. */
+    background-color: rgba(253, 246, 236, 0.92);
     background-repeat: no-repeat;
     /* Image paints only inside the padding, so the 4px ring around it always
        shows the plain badge color — same margin for both, independent of
@@ -863,7 +865,7 @@
   }
 
   .kiss-chaperone--bottom {
-    top: 93%;
+    top: 90%;
     background-size: 100% auto;
     /* Lower (toward 0%) reveals more of the top of her head. */
     background-position: 50% 4%;
@@ -884,12 +886,12 @@
   .kiss-chaperone.watching {
     transform: translate(-50%, -50%) scale(1.15);
     border-color: rgba(220, 60, 60, 0.9);
-    background-color: rgba(220, 60, 60, 0.2);
+    background-color: rgba(200, 70, 70, 0.92);
   }
 
   .kiss-spark {
     position: absolute;
-    top: 35%;
+    top: var(--kiss-point-top, 35%);
     left: 50%;
     transform: translate(-50%, -50%) scale(0.6);
     z-index: 5;
@@ -922,7 +924,7 @@
 
   .kiss-heart {
     position: absolute;
-    top: 35%;
+    top: var(--kiss-point-top, 35%);
     left: 50%;
     z-index: 5;
     font-size: var(--heart-size, 1rem);
@@ -938,7 +940,10 @@
     position: absolute;
     bottom: 18%;
     width: auto;
-    height: 300px;
+    /* Shrinks on short stages (see JS) so the top of their heads never
+       grows into the top lookout — computed from the stage's own height,
+       not a fixed px value. */
+    height: var(--kiss-char-h, 300px);
     transform: translateX(-50%);
     transition: left 0.35s ease;
     z-index: 2;
@@ -2006,6 +2011,37 @@
     const finalScoreEl = document.getElementById('kiss-final-score');
     const startBtn = document.getElementById('kiss-start-btn');
     const restartBtn = document.getElementById('kiss-restart-btn');
+
+    // The characters are a fixed 300px tall by default, sized for a roomy
+    // stage. On a shorter stage that fixed height would push their heads up
+    // into the top lookout, so it shrinks (down to a floor) based on the
+    // stage's own height instead — keeping the gap to the top lookout
+    // instead of the gap just disappearing on smaller screens.
+    function applyResponsiveLayout() {
+      const stageRect = stage.getBoundingClientRect();
+      const stageH = stageRect.height;
+      if (!stageH) return;
+      const charH = Math.max(130, Math.min(300, stageH * 0.67 - 57));
+      stage.style.setProperty('--kiss-char-h', `${charH}px`);
+
+      // Re-measure after the height above takes effect so the heart/spark
+      // effect tracks wherever the lips actually land on THIS screen,
+      // instead of a fixed percentage tuned for one viewport size.
+      const g = groom.getBoundingClientRect();
+      const b = bride.getBoundingClientRect();
+      if (g.height && b.height) {
+        const avgTop = (g.top + b.top) / 2 - stageRect.top;
+        const avgHeight = (g.height + b.height) / 2;
+        const pct = ((avgTop + avgHeight * 0.157) / stageH) * 100;
+        stage.style.setProperty('--kiss-point-top', `${pct}%`);
+      }
+    }
+    if (window.ResizeObserver) {
+      new ResizeObserver(applyResponsiveLayout).observe(stage);
+    } else {
+      applyResponsiveLayout();
+      window.addEventListener('resize', applyResponsiveLayout);
+    }
 
     const ROUND_MS = 20000;
     // Getting caught drains score faster than safe holding builds it, so a
