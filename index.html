@@ -962,19 +962,21 @@
   .kiss-character--bride {
     left: 86%;
     /* Same nudge at rest and held so there's no vertical jump between them. */
-    bottom: calc(18% - 5px);
+    bottom: calc(18% - 3.5px);
   }
 
   /* Held (kissing) positions: centers placed so the two images' facing
-     edges just meet at the stage's midline, based on each one's fixed
-     rendered width at the height above — re-measure both if the character
-     heights change. */
+     edges just meet (plus a small deliberate overlap) at the stage's
+     midline. Computed in JS from each one's actual rendered width, since
+     that width scales with --kiss-char-h on shorter screens — a fixed px
+     offset here would leave a gap (or too much overlap) whenever the
+     character isn't rendered at the original 300px-tall size. */
   .kiss-character--groom.held {
-    left: calc(50% - 62px);
+    left: var(--groom-held-left, calc(50% - 62px));
   }
 
   .kiss-character--bride.held {
-    left: calc(50% + 55px);
+    left: var(--bride-held-left, calc(50% + 55px));
   }
 </style>
 </head>
@@ -1007,6 +1009,7 @@
         <p>We hope you always take care of one another and never forget to prioritize yourselves and your relationship. You have each other for life (yay!!). We also hope the wines help create some amazing date nights 🍷 so you can really enjoy this new era.</p>
         <p>We are so incredibly happy to have you as friends and can't wait for many more board game nights, dinners, and memories together with our now married couple friends!! ❤️</p>
         <p>Now go enjoy being married. It's basically the same as before... just with rings 💍 and being able to say “my husband” and “my wife” (which is really cool!!).</p>
+        <p>So let's raise a toast to the bride and groom! (click the button)</p>
       </div>
       <button class="toast-btn" id="toast-btn">🥂 Cheers 🥂</button>
       <div class="cheers" id="cheers">🍷 To Angelika & Stanislaw! 🍷</div>
@@ -2024,9 +2027,10 @@
       const charH = Math.max(130, Math.min(300, stageH * 0.67 - 57));
       stage.style.setProperty('--kiss-char-h', `${charH}px`);
 
-      // Re-measure after the height above takes effect so the heart/spark
-      // effect tracks wherever the lips actually land on THIS screen,
-      // instead of a fixed percentage tuned for one viewport size.
+      // Re-measure after the height above takes effect — both the kiss
+      // point (for the heart/spark effect) and the held/touching offsets
+      // below need the character's ACTUAL rendered size on this screen,
+      // not values tuned for one viewport.
       const g = groom.getBoundingClientRect();
       const b = bride.getBoundingClientRect();
       if (g.height && b.height) {
@@ -2034,6 +2038,16 @@
         const avgHeight = (g.height + b.height) / 2;
         const pct = ((avgTop + avgHeight * 0.157) / stageH) * 100;
         stage.style.setProperty('--kiss-point-top', `${pct}%`);
+
+        // Pure edge-touch would be exactly half each one's own width; these
+        // nudge a few px further in on top of that for a slight, deliberate
+        // overlap at the kiss point.
+        const GROOM_INWARD_NUDGE = 4;
+        const BRIDE_INWARD_NUDGE = 2;
+        const groomOffset = (g.width / 2 - GROOM_INWARD_NUDGE).toFixed(1);
+        const brideOffset = (b.width / 2 - BRIDE_INWARD_NUDGE).toFixed(1);
+        stage.style.setProperty('--groom-held-left', `calc(50% - ${groomOffset}px)`);
+        stage.style.setProperty('--bride-held-left', `calc(50% + ${brideOffset}px)`);
       }
     }
     if (window.ResizeObserver) {
@@ -2238,7 +2252,7 @@
       } else {
         gameOverTitle.textContent = 'Angelika wins!';
       }
-      finalScoreEl.textContent = `Left: ${l}s · Right: ${r}s`;
+      finalScoreEl.textContent = `Stanislaw: ${l}s · Angelika: ${r}s`;
       gameOverOverlay.hidden = false;
       if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
     }
